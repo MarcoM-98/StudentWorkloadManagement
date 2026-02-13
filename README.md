@@ -32,10 +32,14 @@
 
 ## Features
 List the ready features here:
-- Awesome feature 1
-- Awesome feature 2
-- Awesome feature 3
+DOCUMENT UPLOAD
+- Allows students to upload homework or assignment files so the system can extract tasks and deadlines automatically.
 
+KEYWORD/AI PARSING
+- Calculates the total time required to complete all upcoming assignments.
+
+WORKLOAD ALERT
+- Alerts users when their workload exceeds their planned study time and suggests adjustments.
 
 ## Screenshots
 ![Example screenshot](./img/screenshot.png)
