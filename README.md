@@ -1,4 +1,4 @@
-# Project Name
+# GitYourWorkDone
 > Outline a brief description of your project.
 > Live demo [_here_](https://www.example.com). <!-- If you have the project hosted somewhere, include the link here. -->
 
@@ -32,13 +32,12 @@
 - Vercel – deployment and hosting platform - https://vercel.com/
 
 
-## Features
-List the ready features here:
-N/A
+## Features Complete
+None yet complete
+
 
 ## Screenshots
-![Example screenshot](./img/screenshot.png)
-<!-- If you have screenshots you'd like to share, include them here. -->
+![Project Logo](./image/project-symbol.jpg)
 
 
 ## Setup
@@ -58,14 +57,15 @@ Provide various use cases and code examples here.
 Project is: _in progress_ 
 
 
-## Room for Improvement
+## Room for Improvement/Features to add
 Include areas you believe need improvement / could be improved. Also add TODOs for future development.
 
 Room for improvement:
 - Improvement to be done 1
 - Improvement to be done 2
 
-To do:
+Features To do:
+
 DOCUMENT UPLOAD
 - Allows students to upload homework or assignment files so the system can extract tasks and deadlines automatically.
 
