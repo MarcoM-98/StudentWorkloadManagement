@@ -1,4 +1,4 @@
-# Project Name
+# GitYourWorkDone
 > Outline a brief description of your project.
 > Live demo [_here_](https://www.example.com). <!-- If you have the project hosted somewhere, include the link here. -->
 
@@ -17,29 +17,27 @@
 
 
 ## General Information
-- Provide general information about your project here.
-- What problem does it (intend to) solve?
-- What is the purpose of your project?
-- Why did you undertake it?
+1. Our team, Enceladus, consists of Kacin Segovia, Kyle Kronk, Marco Mosqueda, Isabel Garcia.
+2. A site that will take downloads of homework to utilize AI to give a potential work time for each assignment as well as an order each assignment should be completed. Based on given workload users will also be alerted when workload exceeds allowed study time based on user study commitments.
+3. The site is meant for students and other individuals in need of time management for work tasks.
+4. We hope to give people more control over their time and ease their stresses with a strong visualization of their workload.
 <!-- You don't have to answer all the questions - just the ones relevant to your project. -->
 
 
 ## Technologies Used
-- Tech 1 - version 1.0
-- Tech 2 - version 2.0
-- Tech 3 - version 3.0
+- Next.js - full-stack React framework for frontend and backend API routes - https://nextjs.org/
+- Tailwind CSS – utility-first styling framework for fast UI development - https://tailwindcss.com/
+- OpenAI API – AI analysis for assignment parsing and workload estimation - https://openai.com/api/
+- Node.js – runtime environment for server functionality - https://nodejs.org/en
+- Vercel – deployment and hosting platform - https://vercel.com/
 
 
-## Features
-List the ready features here:
-- Awesome feature 1
-- Awesome feature 2
-- Awesome feature 3
+## Features Complete
+None yet complete
 
 
 ## Screenshots
-![Example screenshot](./img/screenshot.png)
-<!-- If you have screenshots you'd like to share, include them here. -->
+![Project Logo](./image/project-symbol.jpg)
 
 
 ## Setup
@@ -56,19 +54,26 @@ Provide various use cases and code examples here.
 
 
 ## Project Status
-Project is: _in progress_ / _complete_ / _no longer being worked on_. If you are no longer working on it, provide reasons why.
+Project is: _in progress_ 
 
 
-## Room for Improvement
+## Room for Improvement/Features to add
 Include areas you believe need improvement / could be improved. Also add TODOs for future development.
 
 Room for improvement:
 - Improvement to be done 1
 - Improvement to be done 2
 
-To do:
-- Feature to be added 1
-- Feature to be added 2
+Features To do:
+
+DOCUMENT UPLOAD
+- Allows students to upload homework or assignment files so the system can extract tasks and deadlines automatically.
+
+KEYWORD/AI PARSING
+- Calculates the total time required to complete all upcoming assignments.
+
+WORKLOAD ALERT
+- Alerts users when their workload exceeds their planned study time and suggests adjustments.
 
 
 ## Acknowledgements
