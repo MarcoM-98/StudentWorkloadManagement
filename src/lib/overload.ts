@@ -1,0 +1,59 @@
+// src/lib/overload.ts
+import { Assignment, Availability, OverloadResult } from "./types";
+
+function clampNumber(n: number, min: number, max: number): number {
+  if (Number.isNaN(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
+function toISODateOnly(d: Date): string {
+  // avoids timezone "yesterday/tomorrow" issues by using local date components
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function addDaysLocal(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+export function computeOverload(
+  assignments: Assignment[],
+  availability: Availability | null,
+  now: Date = new Date()
+): OverloadResult {
+  // Required hours = sum estimatedHours for TODO items
+  let required = 0;
+
+  for (const a of assignments) {
+    if (a.status === "DONE") continue;
+    const hrs = typeof a.estimatedHours === "number" ? a.estimatedHours : 0;
+    if (!Number.isFinite(hrs) || hrs < 0) continue; // ignore invalid
+    required += hrs;
+  }
+
+  // Sprint 1: fixed 7-day window => availableHours equals hoursPerWeek
+  const hoursPerWeek = availability?.hoursPerWeek ?? 0;
+  const available = clampNumber(hoursPerWeek, 0, 80); // optional clamp
+
+  const overload = Math.max(0, required - available);
+
+  const windowStart = toISODateOnly(now);
+  const windowEnd = toISODateOnly(addDaysLocal(now, 6)); // 7 total days
+
+  return {
+    requiredHours: round1(required),
+    availableHours: round1(available),
+    overloadHours: round1(overload),
+    isOverloaded: required > available,
+    windowStart,
+    windowEnd,
+  };
+}
