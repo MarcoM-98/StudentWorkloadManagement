@@ -1,4 +1,4 @@
-export // interface for the assignments 
+export // interface for the assignments // SCRUM-46
 {
   id: string; // id of the assignment/hw
   title: string; // title of the assignment/hw
@@ -7,7 +7,7 @@ export // interface for the assignments
   status: 'todo' | 'in-progress' | 'done'; // status of the assignment to let the user know if it's completed or not
 }
 
-export // interface ScheduledPlan 
+export // interface ScheduledPlan // SCRUM-46
 {
   sortedAssignments: Assignment[]; // assignments sorted by priority
   Time_ToComplete: number; // total time required
