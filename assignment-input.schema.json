@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/schemas/assignment-stored.json",
+    "title": "Stored Assignment",
+    "type": "object",
+    "required": [
+        "id",
+        "title",
+        "dueDate",
+        "completed",
+        "createdAt",
+        "updatedAt"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "title": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "dueDate": {
+            "type": "string",
+            "format": "date"
+        },
+        "course": {
+            "type": "string"
+        },
+        "completed": {
+            "type": "boolean"
+        },
+        "priority": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high"
+            ]
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+        }
+    },
+    "additionalProperties": false
+}
