@@ -54,10 +54,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 ## General Information
-1. Our team, Enceladus, consists of Kacin Segovia, Kyle Kronk, Marco Mosqueda, Isabel Garcia.
-2. A site that will take downloads of homework to utilize AI to give a potential work time for each assignment as well as an order each assignment should be completed. Based on given workload users will also be alerted when workload exceeds allowed study time based on user study commitments.
-3. The site is meant for students and other individuals in need of time management for work tasks.
-4. We hope to give people more control over their time and ease their stresses with a strong visualization of their workload.
+- Provide general information about your project here.
+- What problem does it (intend to) solve?
+- What is the purpose of your project?
+- Why did you undertake it?
 <!-- You don't have to answer all the questions - just the ones relevant to your project. -->
 
 
