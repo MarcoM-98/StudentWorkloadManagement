@@ -30,6 +30,10 @@ export const PlanGenerator
 
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
 // Scrum-38 work below
+
+
+// Goal is to ensure that completed work disappears from your calculations
+// Scrum-43 work below
  
   return {
     // return the sorted assignments 
