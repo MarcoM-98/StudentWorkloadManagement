@@ -26,6 +26,10 @@ export const PlanGenerator
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
                                                                          // shorter duration gets higher priority
   });
+
+
+// Plan whenever something changes, such as a student finishing a task early or updating their study hours.
+// Scrum-38 work below
  
   return {
     // return the sorted assignments 
