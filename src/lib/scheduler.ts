@@ -34,6 +34,8 @@ export const PlanGenerator
 
 // Goal is to ensure that completed work disappears from your calculations
 // Scrum-43 work below
+
+ const activeAssignments = assignments.filter(a => a.status !== 'done'); // filter out completed assignments
  
   return {
     // return the sorted assignments 
