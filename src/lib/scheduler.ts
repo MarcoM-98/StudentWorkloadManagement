@@ -30,6 +30,7 @@ export const PlanGenerator
 
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
 // Scrum-38 work below
+const sortedAssignments = [...activeAssignments].sort((a, b) => {//rest of code}
  
   return {
     // return the sorted assignments 
