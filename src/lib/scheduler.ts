@@ -1,4 +1,4 @@
-export // interface for the assignments // SCRUM-46
+export interface Assignments // SCRUM-46 interface to know what properties the object should have
 {
   id: string; // id of the assignment/hw
   title: string; // title of the assignment/hw
@@ -7,7 +7,7 @@ export // interface for the assignments // SCRUM-46
   status: 'todo' | 'in-progress' | 'done'; // status of the assignment to let the user know if it's completed or not
 }
 
-export // interface ScheduledPlan // SCRUM-46
+export interface ScheduledPlan // SCRUM-46 interface to know what properties the object should have
 {
   sortedAssignments: Assignment[]; // assignments sorted by priority
   Time_ToComplete: number; // total time required
@@ -22,7 +22,10 @@ export const PlanGenerator
   const currentDate = new Date(); // current date
 
  // Add a filter to score the assignments to know their priority 
- 
+ const sortedAssignments = [...assignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
+                                                                         // shorter duration gets higher priority
+  });
  
   return {
     // return the sorted assignments 
