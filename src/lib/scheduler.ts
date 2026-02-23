@@ -22,7 +22,8 @@ export const PlanGenerator
   const currentDate = new Date(); // current date
 
  // Add a filter to score the assignments to know their priority 
- 
+ // SCRUM-26 workload calculation for the assignments and availability for breaks
+ const totalTime = activeAssignments.reduce((acc, curr) => acc + curr.duration_inMinutess, 0); // calculates total minutes of hw left to do
  
   return {
     // return the sorted assignments 
