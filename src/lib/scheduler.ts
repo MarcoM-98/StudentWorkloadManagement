@@ -21,17 +21,18 @@ export const PlanGenerator
 ): ScheduledPlan => { // return the plan
   const currentDate = new Date(); // current date
 
- // Add a filter to score the assignments to know their priority 
- const sortedAssignments = [...assignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
-    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
-                                                                         // shorter duration gets higher priority
-  });
-
 
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
+ // Filter to score the assignments to know their priority 
 // Scrum-38 work below
-const sortedAssignments = [...activeAssignments].sort((a, b) => {//rest of code}
- 
+const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
+    if (a.status === 'in-progress' && b.status !== 'in-progress') return -1; // if a is in progress but b is not then put a first
+    if (a.status !== 'in-progress' && b.status === 'in-progress') return 1; // if a is not in progess but b is then put b first
+    
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
+                                                                         // shorter duration gets higher priority
+
+});
   return {
     // return the sorted assignments 
     Time_ToComplete: totalTime, // return the total time required
