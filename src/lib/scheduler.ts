@@ -32,8 +32,6 @@ export const PlanGenerator = ( // function to generate the plan
                                                                          // shorter duration gets higher priority
   });
 
- const totalTime = activeAssignments.reduce((acc, curr) => acc + curr.duration_inMinutess, 0); // calculate total time required to complete all active assignments
-
 
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
 // Scrum-38 work below
