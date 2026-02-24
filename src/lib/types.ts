@@ -1,6 +1,6 @@
 // src/lib/types.ts
 
-export type AssignmentStatus = "TODO" | "DONE";
+export type AssignmentStatus = "TODO" | "DONE" | "IN_PROGRESS";
 
 export interface Assignment {
   id: string;
