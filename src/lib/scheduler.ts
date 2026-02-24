@@ -33,6 +33,9 @@ const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
                                                                          // shorter duration gets higher priority
 
+
+// SCRUM- 44 WORK BELOW
+
 });
   return {
     // return the sorted assignments 
