@@ -24,10 +24,15 @@ export const PlanGenerator
  // Add a filter to score the assignments to know their priority 
  // SCRUM-26 workload calculation for the assignments and availability for breaks
  const totalTime = activeAssignments.reduce((acc, curr) => acc + curr.duration_inMinutess, 0); // calculates total minutes of hw left to do
+ const breakTime = 30; // make a 30 min break
+ const workTime_final = AvailableTime - breakTime;
+
+ const isOverloaded = totalTime > workTime_final; 
  
   return {
     // return the sorted assignments 
     Time_ToComplete: totalTime, // return the total time required
-    TaskOverloaded: totalTime > AvailableTime // return if the user is overloaded or not
+    TaskOverloaded: isOverloaded // return if the user is overloaded or not
+
   };
 };
