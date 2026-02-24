@@ -23,10 +23,13 @@ export const PlanGenerator = ( // function to generate the plan
 // Goal is to ensure that completed work disappears from your calculations
 // Scrum-43 work below
  const activeAssignments = assignments.filter(a => a.status !== 'done'); // filter out completed assignments
+
+ 
  // Add a filter to score the assignments to know their priority 
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
  // Filter to score the assignments to know their priority 
-// Scrum-38 work below
+// Scrum-38 work below 
+
 const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
     if (a.status === 'in-progress' && b.status !== 'in-progress') return -1; // if a is in progress but b is not then put a first
     if (a.status !== 'in-progress' && b.status === 'in-progress') return 1; // if a is not in progess but b is then put b first
