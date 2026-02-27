@@ -4,6 +4,7 @@ export interface Assignments // SCRUM-46 interface to know what properties the o
   title: string; // title of the assignment/hw
   duration_inMinutess: number; // duration in minutes to complete the assignment
   dueDate: Date; // due date for assignments
+  minuteSpent : number;// This will help us track how much work is done
   status: 'todo' | 'in-progress' | 'done'; // status of the assignment to let the user know if it's completed or not
 }
 
@@ -37,7 +38,7 @@ const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due
                                                                          // shorter duration gets higher priority
 
 
-// SCRUM- 44 WORK BELOW
+// Scrum 44
 
 });
   return {
