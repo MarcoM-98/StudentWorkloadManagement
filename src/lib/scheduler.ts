@@ -30,14 +30,19 @@ export const PlanGenerator = ( // function to generate the plan
 // Plan whenever something changes, such as a student finishing a task early or updating their study hours.
  // Filter to score the assignments to know their priority 
 // Scrum-38 work below 
-
 const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
     if (a.status === 'in-progress' && b.status !== 'in-progress') return -1; // if a is in progress but b is not then put a first
     if (a.status !== 'in-progress' && b.status === 'in-progress') return 1; // if a is not in progess but b is then put b first
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(); // if due dates are the same, sort by duration,
                                                                          // shorter duration gets higher priority
 
+ // SCRUM-26 workload calculation for the assignments and availability for breaks
+ const totalTime = activeAssignments.reduce((acc, curr) => acc + curr.duration_inMinutess, 0); // calculates total minutes of hw left to do
+ const breakTime = 30; // make a 30 min break
+ const workTime_final = AvailableTime - breakTime;
 
+ const isOverloaded = totalTime > workTime_final; 
+ 
 // Scrum 44
 
 });
@@ -45,6 +50,7 @@ const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due
     // return the sorted assignments 
     sortedAssignments
     Time_ToComplete: totalTime, // return the total time required
-    TaskOverloaded: totalTime > AvailableTime // return if the user is overloaded or not
+    TaskOverloaded: isOverloaded // return if the user is overloaded or not
+
   };
 };
