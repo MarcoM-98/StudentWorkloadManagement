@@ -39,6 +39,7 @@ const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due
 
  // SCRUM-26 workload calculation for the assignments and availability for breaks
  // SCRUM-44: Calculate remaining time by subtracting minutesSpent from duration
+ // SCRUM-45: Deadline detection system 
 const totalTime = activeAssignments.reduce((acc, curr) => {
   const remaining = curr.duration_inMinutess - (curr.minutesSpent || 0);
   return acc + (remaining > 0 ? remaining : 0);
