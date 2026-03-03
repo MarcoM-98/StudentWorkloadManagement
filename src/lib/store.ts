@@ -4,8 +4,20 @@ import { Assignment, Availability } from "./types";
 // NOTE: This is in-memory only (resets when server restarts).
 // Good enough for Sprint 1. Replace with DB later.
 
-const assignments: Assignment[] = [];
-let availability: Availability | null = { hoursPerWeek: 0 };
+const assignments: Assignment[] = [
+  {
+    id: "1",
+    title: "Big Project",
+    dueDate: "2026-06-30",
+    estimatedHours: 15,
+    status: "TODO",
+  },
+];
+
+let availability: Availability | null = {
+  hoursPerWeek: 5,
+};
+
 
 export function getAssignments(): Assignment[] {
   return assignments;
