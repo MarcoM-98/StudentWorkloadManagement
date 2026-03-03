@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Assignment from '../models/Assignment.js';
+import Assignment from "./model/Assignment.js";
 
 async function runExample() {
     try {
