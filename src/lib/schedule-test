@@ -1,0 +1,20 @@
+import { PlanGenerator, Assignment } from './scheduler';
+
+// Create a mock assignment to simulate your "GitYourWorkDone" data
+const mockAssignments: Assignment[] = [
+  {
+    id: 'test-1',
+    title: 'Verify Logic',
+    duration_inMinutess: 60,
+    minutesSpent: 10, // Proves SCRUM-44 (Partial completion)
+    dueDate: new Date(),
+    status: 'in-progress' // Proves SCRUM-38 (Priority sorting)
+  }
+];
+
+// Run the function
+const result = PlanGenerator(mockAssignments, 120);
+
+// Log the result
+console.log("--- Logic Test Result ---");
+console.log(JSON.stringify(result, null, 2));
