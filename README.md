@@ -70,8 +70,22 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 ## Features Complete
-None yet complete
+Contributions:
+Kacin: "Provided users with full CRUD (Create,Read, Update, and Delete) capabilities for the assignment database that are connected instantly to a MongoDB cluster."
 
+(First 2 tasks created an outline for the later implemented database)
+-Jira Task: Kacin - Designed Assignment & Availability Data Schema https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-29
+-Jira Task: Kacin - Validate & Store Assignments in Memory https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-33
+-Jira Task: Kacin - Learn/Set up MongoDB Cluster &  Began Updating Schema https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-49
+-Jira Task: Kacin - API Model/CRUD Examplehttps://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-35 
+-Jira Task: Kacin - Implement Router CRUD and Validate https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-18 
+
+Next Steps
+
+Kacin:
+- User settings with personalization and default settings
+- Add proper user input validation along with user authentication
+- Connect a simple input interface.
 
 ## Screenshots
 ![Project Logo](./image/project-symbol.jpg)
