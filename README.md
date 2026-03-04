@@ -69,13 +69,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 
 
-**Isabel:** ""
+**Isabel:** "Setting up the UI and backend webscraping and user input and interface"
 
-- Jira Task: Isabel - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+- Jira Task: Isabel - SCRUM-50
+  - SCRUM-50, Bitbucket:https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-50
 
-- Jira Task: Isabel - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+
 
 
 
@@ -132,9 +131,13 @@ Marco:
 
 Isabel:
 
-• 
+• Improve the UI with a more user friendly interface
 
-• 
+• Choose the webscraping or the api usage to gather information on the users assignments
+
+• connect the UI and the clusers to have a connction that is easily accessible to connect to
+
+
 
 
 Kacin:
