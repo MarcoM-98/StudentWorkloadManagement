@@ -56,14 +56,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Sprint 1
 
-### Contributions
-
-## Sprint 1
-
-### Contributions
-
-## Sprint 1
-
 ## Contributions
 
 
@@ -87,13 +79,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 
 
-**Kacin:** ""
+**Kacin:** "Provided users with full CRUD (Create, Read, Update, and Delete) capabilities for the assignment database connected to a MongoDB cluster, enabling assignments to be created, viewed, updated, and deleted through backend API routes."
 
-- Jira Task: Kacin - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+- Jira Task: Kacin - Designed Assignment & Availability Data Schema  
+  - SCRUM-29, https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-29
 
-- Jira Task: Kacin - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+- Jira Task: Kacin - Validate & Store Assignments in Memory  
+  - SCRUM-33, https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-33
+
+- Jira Task: Kacin - Learn/Set up MongoDB Cluster & Began Updating Schema  
+  - SCRUM-49, https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-49
+
+- Jira Task: Kacin - API Model/CRUD Example  
+  - SCRUM-35, https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-35
+
+- Jira Task: Kacin - Implement Router CRUD and Validate  
+  - SCRUM-18, https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-18
 
 
 
@@ -115,6 +116,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   - SCRUM-10, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-10-Testing-Branch)
 
 
+## Reports
+
+![Burnup](./image/Sprint-1-Burnup.png)
+
 
 ## Next Steps
 
@@ -134,9 +139,11 @@ Isabel:
 
 Kacin:
 
-• 
+• Implement user settings with personalization and default configuration
 
-• 
+• Add proper user authentication and validation for assignment inputs
+
+• Connect a simple UI interface to the backend CRUD assignment API
 
 
 Kyle:
