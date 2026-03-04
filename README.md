@@ -59,15 +59,30 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Contributions
 
 
-**Marco:** ""
+**Marco:** "implementing and designing the logic layer of the application, workload calculations, deadline systems and partial completion logic for assignments as wll as API Route integration & data formatting for the functions."
+- Jira Task: Marco - Design and implement a priority logic
+  - SCRUM-20, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-20-design-and-implement-a-priority)
 
-- Jira Task: Marco - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+- Jira Task: Marco - Workload calculation for assignments and availability for study times/break 
+  - SCRUM-26, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-26-workload-calculation-for-assign)
 
-- Jira Task: Marco - SCRUM-XX  
-  - SCRUM-XX, Bitbucket
+- Jira Task: Marco - API Route integration & data formatting for the functions 
+  - SCRUM-27, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-27-api-route-integration-data-form)
 
+  - Jira Task: Marco - Define the Type Script interfaces
+  - SCRUM-46, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-46-define-the-type-script-interfac)
 
+  - Jira Task: Marco - Implement partial completion Logic to know if an assignment is almost done or not  
+  - SCRUM-44, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-44-implement-partial-completion-lo)
+
+  - Jira Task: Marco - Schedule/work recalculation 
+  - SCRUM-38, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-38-schedule-work-recalculatio)
+
+  - Jira Task: Marco - Add "Done" filtering to mark when a work is done  
+  - SCRUM-43, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-43-add-done-filtering-to-mark-when)
+
+  - Jira Task: Marco - Develop a deadline detection system  
+  - SCRUM-45, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-45-develop-a-deadline-detection-sy)
 
 **Isabel:** ""
 
@@ -125,9 +140,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Marco:
 
-• 
+• Implement this logic with mongodb to display accurate results/ move to live data
 
-• 
+• Frontend Component Development to focus on the UI components that reflect the "Overload" and "Priority" math.
+
+• Dynamic Re-scheduling such as moving a task to done or in progress would make the UI immediately triggers to refresh the list.
 
 
 Isabel:
