@@ -29,8 +29,8 @@ export const PlanGenerator = (assignments: Assignments[], AvailableTime: number)
  // Scrum-38 work below 
  
 const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
-    if (a.priority === 'IMMEDIATE' && b.status !== 'IMMEDIATE') return -1; // if a is in progress/immediate but b is not then put a first
-    if (a.priority !== 'IMMEDIATE' && b.status === 'IMMEDIATE') return 1; // if a is not in progess/immediate but b is then put b first
+    if (a.priority === 'IMMEDIATE' && b.priority !== 'IMMEDIATE') return -1; // if a is in progress/immediate but b is not then put a first
+    if (a.priority !== 'IMMEDIATE' && b.priority === 'IMMEDIATE') return 1; // if a is not in progess/immediate but b is then put b first
     return 0;
                                                                          
 
@@ -40,7 +40,7 @@ const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due
  // SCRUM-26 workload calculation for the assignments and availability for breaks
  // SCRUM-44: Calculate remaining time by subtracting minutesSpent from duration
 const totalTime = activeAssignments.reduce((acc, curr) => {
-  const remaining = curr.duration_inMinutess - (curr.minutesSpent || 0);
+  const remaining = curr.duration_inMinutess - (curr.minuteSpent || 0);
   return acc + (remaining > 0 ? remaining : 0);
 
 }, 0); // SCRUM 44
@@ -48,12 +48,6 @@ const totalTime = activeAssignments.reduce((acc, curr) => {
 
  const isOverloaded = totalTime > (AvailableTime-30);
 
- return{
-    sortedAssignments,
-    Time_ToComplete: totalTime,
-    TaskOverloaded: isOverloaded
-
-    };
   return {
     // return the sorted assignments 
     sortedAssignments,
