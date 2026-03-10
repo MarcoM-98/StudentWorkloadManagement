@@ -1,25 +1,34 @@
 // Scrum-27 work should be here to connect to front end so it can conncet to the schedule logic
 
 import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/dbConnect'; // Make sure it connects to mongoDB
+import Assignment from '@/mongodb-mongoose/model/Assignment'; //
 import { PlanGenerator } from '@/lib/scheduler'; // Import the logic
-import { Assignments } from '@/lib/scheduler'; // Import the types
 
-// SCRUM-27: handles the "POST" request from the frontend
-export async function POST(request: Request) {
+// SCRUM-27: 
+export async function GET() {
   try {
-    // 1. DATA FORMATTING: Extract the data sent by the user
-    const body = await request.json();
-    const { assignments, availableTime }: { assignments: Assignments[], availableTime: number } = body;
+    // 1. Connect to MongoDB Atlas
+    await dbConnect();
 
-    // 2. INTEGRATION: Run the logic
-    const generatedPlan = PlanGenerator(assignments, availableTime);
+    // 2. Fetch live data. 
+    // .lean() makes the data look like your mock objects for easier processing
+    const assignments = await Assignment.find({});
 
-    // 3. RETURN: Send the processed plan back to the frontend
-    return NextResponse.json(generatedPlan);
+    // 3. Log the data to your terminal so you can see it working
+    console.log(`Fetched ${assignments.length} assignments from MongoDB.`);
+
+    // PlanGenerator logic
+    // use 120 minutes as a default "AvailableTime" for the test
+    const studyPlan = PlanGenerator(assignments as any, 120);
+
+    // 5. Send the calculated plan back to the browser
+    return NextResponse.json(studyPlan);
+
   } catch (error) {
-    // Basic error handling for the API
+    console.error("CRITICAL API ERROR:", error);
     return NextResponse.json(
-      { error: 'Failed to generate plan. Please check your data format.' },
+      { error: "Internal Server Error: Could not process study plan." },
       { status: 500 }
     );
   }
