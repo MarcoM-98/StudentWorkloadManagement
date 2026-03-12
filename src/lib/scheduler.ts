@@ -22,14 +22,35 @@ export const PlanGenerator = (assignments: AssignmentDocument[], AvailableTime: 
  // Filter to score the assignments to know their priority 
  // Scrum-38 work below
  
-const sortedAssignments = [...activeAssignments].sort((a, b) => { // sort by due date, earlier due dates get higher priority 
-    if (a.priority === 'IMMEDIATE' && b.priority !== 'IMMEDIATE') return -1; // if a is in progress/immediate but b is not then put a first
-    if (a.priority !== 'IMMEDIATE' && b.priority === 'IMMEDIATE') return 1; // if a is not in progess/immediate but b is then put b first
-    return 0;
-                                                                         
+// SCRUM-38: Ordering Algorithm (Urgency + Effort)
+  const scoredAssignments = activeAssignments.map(task => {
+    // 1. Calculate Urgency (Time until deadline)
+    const now = new Date().getTime();
+    const due = new Date(task.dueDate).getTime();
+    const hoursRemaining = Math.max((due - now) / (1000 * 60 * 60), 1);
+    
+    // Closer deadlines increase the score (Up to 60 point((if s due right now)))
+    const urgencyScore = Math.max(0, 60 - (hoursRemaining / 2)); // Dividing by 2 means a task's urgency score
+                                                                // drops to zero if it's due more than 120 hours (5 days) away.
 
-});
+    // 2. Priority Weighting (Up to 30 points, can change points later if we want urgency to be priority)
+    const weights: Record<string, number> = { 'IMMEDIATE': 30, 'medium': 15, 'low': 5 };
+    const priorityScore = weights[task.priority] || 5;
 
+    // 3. Effort Factor (Longer duration tasks get higher priority within their tier)
+    // Using 10 points for effort
+    const effort = (task as any).duration_inMinutess || 60; // if task does not have a duration yet
+                                                            // assume is 60 minutes
+    const effortScore = Math.min(effort / 12, 10); // This prevents a massive ex.10-hour task from accidentally outranking a small but "IMMEDIATE" task.
+
+    // Combined Total
+    const combinedTotal = Math.round(urgencyScore + priorityScore + effortScore); // adds the urgency, priority and effort score
+
+    return {
+      ...task.toObject(), // Convert Mongoose doc to plain object leaving just title, date etc.
+      priorityPercentage: Math.min(combinedTotal, 100) // Caps at 100%
+    };
+  });
 
  // SCRUM-26 workload calculation for the assignments and availability for breaks
  // SCRUM-44: Calculate remaining time by subtracting minutesSpent from duration
