@@ -52,10 +52,14 @@ export const PlanGenerator = (assignments: AssignmentDocument[], AvailableTime: 
     };
   });
 
+  // sort by combined score = highest priority first
+const sortedAssignments = scoredAssignments.sort((a, b) => b.priorityPercentage - a.priorityPercentage);
+
  // SCRUM-26 workload calculation for the assignments and availability for breaks
  // SCRUM-44: Calculate remaining time by subtracting minutesSpent from duration
 const totalTime = activeAssignments.reduce((acc, curr) => {
-  const remaining = curr.duration_inMinutess - (curr.minuteSpent || 0);
+  const duration = curr.duration_inMinutess || 60;
+  const spent = curr.minuteSpent || 0;
   return acc + (remaining > 0 ? remaining : 0);
 
 }, 0); // SCRUM 44
