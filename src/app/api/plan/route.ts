@@ -13,7 +13,7 @@ export async function GET() {
 
     // 2. Fetch live data. 
     // .lean() makes the data look like your mock objects for easier processing
-    const assignments = await Assignment.find({});
+    const assignments = await Assignment.find({}).lean();
 
     // 3. Log the data to your terminal so you can see it working
     console.log(`Fetched ${assignments.length} assignments from MongoDB.`);
