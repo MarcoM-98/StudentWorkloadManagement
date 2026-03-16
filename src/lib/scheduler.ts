@@ -1,6 +1,6 @@
-import Assingment from '@/mongodb-mongoose/model/Assignment';
+import Assignment from '@/mongodb-mongoose/model/Assignment';
 
-type AssignmentDocument = InstanceType<type of Assignment>;
+type AssignmentDocument = InstanceType<typeof Assignment>;
 
 
 export interface ScheduledPlan // SCRUM-46 interface to know what properties the object should have
@@ -60,6 +60,7 @@ const sortedAssignments = scoredAssignments.sort((a, b) => b.priorityPercentage 
 const totalTime = activeAssignments.reduce((acc, curr) => {
   const duration = curr.duration_inMinutess || 60;
   const spent = curr.minuteSpent || 0;
+  const remaining = duration - spent;
   return acc + (remaining > 0 ? remaining : 0);
 
 }, 0); // SCRUM 44
