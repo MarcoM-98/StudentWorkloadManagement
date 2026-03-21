@@ -13,6 +13,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </aside>
 
-         
+         {/* Main Content Wrapper */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Top Header */}
+        <header className="h-16 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 flex items-center px-6">
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">Overview</h1>
+        </header>
+
+        {/* Page Content goes inside this main tag such as the assignments list */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-zinc-50 dark:bg-zinc-900 p-6">
+          {children} 
+        </main>
+
+      </div>
+    </div>
   );
 }
