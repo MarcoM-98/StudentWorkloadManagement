@@ -78,7 +78,7 @@ export async function POST(req) {
       process.cwd() = project root directory
     */
     const uploadDir = path.join(process.cwd(), "uploads");
-
+    
     // If the uploads folder does not exist yet, create it
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir);
@@ -90,7 +90,9 @@ export async function POST(req) {
       Example result:
       /uploads/assignment1.pdf
     */
-    const filePath = path.join(uploadDir, file.name);
+
+    const uniqueName = `${Date.now()}-${file.name}`;
+    const filePath = path.join(uploadDir, uniqueName);
 
     // Write the file to the uploads folder
     fs.writeFileSync(filePath, buffer);
@@ -103,8 +105,9 @@ export async function POST(req) {
     */
     return NextResponse.json({
       success: true,
-      filename: file.name
+      filename: uniqueName
     });
+
 
   } catch (err) {
     console.error(err);
