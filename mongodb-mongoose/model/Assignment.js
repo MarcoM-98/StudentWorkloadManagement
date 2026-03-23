@@ -9,6 +9,10 @@ const assignmentSchema = new Schema(
             required: true,
             min: 1,
         },
+        userId: {
+            type: String,
+            required: true
+        },
         title: {
             type: String,
             required: true,
@@ -40,6 +44,6 @@ const assignmentSchema = new Schema(
         versionKey: false,
     }
 );
-
+assignmentSchema.index({ userId: 1, id: 1 }, { unique: true });
 const Assignment = model('Assignment', assignmentSchema);
 export default Assignment;
