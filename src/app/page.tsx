@@ -21,12 +21,16 @@ export default function Home() {
 
   // 2. This logic will simulate a database fetch
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setTasks([
-        { _id: "1", title: "Complete Phase 1 Scanner", dueDate: "2026-03-22", priorityPercentage: 85 },
-        { _id: "2", title: "Study for CS Exam", dueDate: "2026-03-25", priorityPercentage: 60 },
-        { _id: "3", title: "Read Chapter 4", dueDate: "2026-03-26", priorityPercentage: 30 }
-      ]);
+    // asynchronous function to handle the internet traffic
+    async function fetchAssignments() {
+      try {
+        //  tries to connect to the server to try and get the assignments
+        const response = await fetch('/api/assignments'); 
+        
+        //  Check if the server answered correctly
+        if (!response.ok) {
+          throw new Error("Failed to fetch data from the server");
+        }
       setLoading(false); 
     }, 1500); // 1.5 second loading delay to make sure it fetches the files
 
