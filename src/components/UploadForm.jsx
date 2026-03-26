@@ -190,6 +190,50 @@ export default function UploadForm() {
 
       {/* Status / result text appears here */}
       {message && <p>{message}</p>}
-    </form>
+
+      {/* Review form appears after AI extracts details */}
+      {showReview && (
+        <form onSubmit={handleReviewSubmit} className="space-y-4 rounded border p-4">
+          <h2 className="text-lg font-semibold">Review Extracted Assignment Details</h2>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium">Assignment Title</label>
+            <input
+              type="text"
+              value={assignmentTitle}
+              onChange={(e) => setAssignmentTitle(e.target.value)}
+              className="w-full rounded border px-3 py-2 text-black"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium">Estimated Minutes</label>
+            <input
+              type="number"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              className="w-full rounded border px-3 py-2 text-black"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium">Due Date</label>
+            <input
+              type="text"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full rounded border px-3 py-2 text-black"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="rounded bg-green-600 px-4 py-2 text-white"
+          >
+            Confirm Details
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
