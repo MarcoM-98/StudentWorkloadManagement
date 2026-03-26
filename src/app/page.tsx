@@ -38,10 +38,17 @@ export default function Home() {
         // Save that real data into our dashboard's memory
         setTasks(data);
 
-      setLoading(false); 
-    }, 1500); // 1.5 second loading delay to make sure it fetches the files
+   } catch (error) {
+        // If anything goes wrong, log it so we can debug in future sprint
+        console.error("Error loading tasks:", error);
+      } finally {
+        //  success or fail , turn off the loading text, we can try to change this later as well.
+        setLoading(false);
+      }
+    }
 
-    return () => clearTimeout(timer);
+    // run the function we just created
+    fetchAssignments();
   }, []);
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
