@@ -12,6 +12,27 @@ type Task = {
   priorityPercentage: number;
 };
 export default function Home() {
+  // 1. The "Memory" (State)
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Hardcoding to see if it works , we'll fetch it from the DB later ( on my next scrum )
+  const isOverloaded = false; 
+
+  // 2. This logic will simulate a database fetch
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTasks([
+        { _id: "1", title: "Complete Phase 1 Scanner", dueDate: "2026-03-22", priorityPercentage: 85 },
+        { _id: "2", title: "Study for CS Exam", dueDate: "2026-03-25", priorityPercentage: 60 },
+        { _id: "3", title: "Read Chapter 4", dueDate: "2026-03-26", priorityPercentage: 30 }
+      ]);
+      setLoading(false); 
+    }, 1500); // 1.5 second loading delay to make sure it fetches the files
+
+    return () => clearTimeout(timer);
+  }, []);
+export default function Home() {
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
