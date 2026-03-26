@@ -135,46 +135,58 @@ export default function UploadForm() {
     setLoading(false); // End loading state no matter what
   }
 
+  // Runs when user confirms the extracted assignment details
+  function handleReviewSubmit(e) {
+    e.preventDefault();
+
+    // Later this can save to DB / app state
+    setMessage(
+      `Reviewed assignment saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
-      {/* Hidden file picker input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={handleFileChange}
-        className="hidden"
-        accept=".txt,.pdf,.docx"
-      />
+    <div className="space-y-6 max-w-xl">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Hidden file picker input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileChange}
+          className="hidden"
+          accept=".txt,.pdf,.docx"
+        />
 
-      {/* Drag and drop area; also opens file picker when clicked */}
-      <div
-        onClick={openFilePicker}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`cursor-pointer rounded border-2 border-dashed p-6 text-center ${
-          dragging ? "border-blue-500 bg-gray-900" : "border-gray-500"
-        }`}
-      >
-        <p className="font-medium">Drag and drop a file here</p>
-        <p className="text-sm opacity-80">or click to choose a file</p>
+        {/* Drag and drop area; also opens file picker when clicked */}
+        <div
+          onClick={openFilePicker}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`cursor-pointer rounded border-2 border-dashed p-6 text-center ${
+            dragging ? "border-blue-500 bg-gray-900" : "border-gray-500"
+          }`}
+        >
+          <p className="font-medium">Drag and drop a file here</p>
+          <p className="text-sm opacity-80">or click to choose a file</p>
 
-        {/* Show selected file name */}
-        {file && (
-          <p className="mt-3 text-sm">
-            Selected file: <span className="font-semibold">{file.name}</span>
-          </p>
-        )}
-      </div>
+          {/* Show selected file name */}
+          {file && (
+            <p className="mt-3 text-sm">
+              Selected file: <span className="font-semibold">{file.name}</span>
+            </p>
+          )}
+        </div>
 
-      {/* Submit button; disabled while request is running */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        {loading ? "Uploading..." : "Upload"}
-      </button>
+        {/* Submit button; disabled while request is running */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          {loading ? "Uploading..." : "Upload"}
+        </button>
+      </form>
 
       {/* Status / result text appears here */}
       {message && <p>{message}</p>}
