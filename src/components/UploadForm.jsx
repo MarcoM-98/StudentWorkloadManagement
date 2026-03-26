@@ -1,15 +1,49 @@
 "use client"; // Marks this as a client component so useState and browser events work
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export default function UploadForm() {
+  const fileInputRef = useRef(null); // Ref lets us open the hidden file input manually
+
   const [file, setFile] = useState(null); // Stores the file the user picked
   const [message, setMessage] = useState(""); // Stores status text shown on screen
   const [loading, setLoading] = useState(false); // Controls button disabled/loading text
+  const [dragging, setDragging] = useState(false); // Tracks whether a file is being dragged over the box
+
+  // Save selected file into state
+  function handleSelectedFile(selectedFile) {
+    if (!selectedFile) return;
+    setFile(selectedFile);
+    setMessage(""); // Clear old message when a new file is chosen
+  }
 
   // Runs when the user picks a file in the input
   function handleFileChange(e) {
-    setFile(e.target.files[0]); // Save the first selected file into state
+    handleSelectedFile(e.target.files?.[0]); // Save the first selected file into state
+  }
+
+  // Prevent browser from opening the file and show drag state
+  function handleDragOver(e) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  // Remove drag state when file leaves the drop zone
+  function handleDragLeave(e) {
+    e.preventDefault();
+    setDragging(false);
+  }
+
+  // Runs when the user drops a file into the drop zone
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    handleSelectedFile(e.dataTransfer.files?.[0]);
+  }
+
+  // Opens the hidden file picker when the drop zone is clicked
+  function openFilePicker() {
+    fileInputRef.current?.click();
   }
 
   // Runs when the form is submitted
@@ -18,7 +52,7 @@ export default function UploadForm() {
 
     // Guard: do nothing if no file was selected
     if (!file) {
-      setMessage("Please select a file.");
+      setMessage("Please select or drop a file.");
       return;
     }
 
@@ -88,13 +122,36 @@ export default function UploadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* File picker input */}
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+      {/* Hidden file picker input */}
       <input
+        ref={fileInputRef}
         type="file"
         onChange={handleFileChange}
-        className="block"
+        className="hidden"
+        accept=".txt,.pdf,.docx"
       />
+
+      {/* Drag and drop area; also opens file picker when clicked */}
+      <div
+        onClick={openFilePicker}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`cursor-pointer rounded border-2 border-dashed p-6 text-center ${
+          dragging ? "border-blue-500 bg-gray-900" : "border-gray-500"
+        }`}
+      >
+        <p className="font-medium">Drag and drop a file here</p>
+        <p className="text-sm opacity-80">or click to choose a file</p>
+
+        {/* Show selected file name */}
+        {file && (
+          <p className="mt-3 text-sm">
+            Selected file: <span className="font-semibold">{file.name}</span>
+          </p>
+        )}
+      </div>
 
       {/* Submit button; disabled while request is running */}
       <button
