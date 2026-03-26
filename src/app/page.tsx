@@ -21,16 +21,23 @@ export default function Home() {
 
   // 2. This logic will simulate a database fetch
   useEffect(() => {
-    // asynchronous function to handle the internet traffic
+    // asynchronous function to handle the internet traffic since react does not let you use the useEffect as a asyn function
+    // so we just create it inside instead.
     async function fetchAssignments() {
       try {
         //  tries to connect to the server to try and get the assignments
         const response = await fetch('/api/assignments'); 
         
-        //  Check if the server answered correctly
+        //  Check if the server answered correctly, we can change the error message to something else
         if (!response.ok) {
           throw new Error("Failed to fetch data from the server");
         }
+        // converts the server's answer into data that React can read
+        const data = await response.json();
+        
+        // Save that real data into our dashboard's memory
+        setTasks(data);
+
       setLoading(false); 
     }, 1500); // 1.5 second loading delay to make sure it fetches the files
 
