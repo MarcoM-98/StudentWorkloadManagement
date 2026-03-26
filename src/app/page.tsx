@@ -32,20 +32,48 @@ export default function Home() {
 
     return () => clearTimeout(timer);
   }, []);
-export default function Home() {
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-black p-8 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 text-center">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">
-            Welcome to GitYourWorkDone
-          </h2>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            The dashboard skeleton is successfully up and running! 
-            <br /><br />
-            (SCRUM-53 components and SCRUM-56 logic will be merged into this space later when i get time).
-          </p>
+        <OverloadBanner />
+        
+        <div className="mt-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
+            
+            {/* overloaded badge! */}
+            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${
+              isOverloaded 
+                ? 'bg-red-50 border-red-200 text-red-700' 
+                : 'bg-green-50 border-green-200 text-green-700'
+            }`}>
+              {isOverloaded ? 'Overloaded' : 'On Track'}
+            </div>
+          </div>
+          
+          {/* The Loading State & Task Loop */}
+          <div className="flex flex-col gap-4">
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <p className="text-zinc-500 animate-pulse text-lg">Loading your schedule please wait...</p>
+              </div>
+            ) : tasks.length > 0 ? (
+              tasks.map((task) => (
+                <AssignmentCard 
+                  key={task._id}
+                  title={task.title} 
+                  dueDate={task.dueDate} 
+                  priorityPercentage={task.priorityPercentage} 
+                />
+              ))
+            ) : (
+              <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
+                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> // show caught up message if no work left
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </DashboardLayout>
