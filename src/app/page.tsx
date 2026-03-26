@@ -43,13 +43,13 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
             
             {/* overloaded badge! */}
-            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${ // tailwind classes to switch between red
-                                                                                // if true, green if false
+            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${ // tailwind classes to switch between
+                                                                                // red if true and green if false, below
               isOverloaded 
                 ? 'bg-red-50 border-red-200 text-red-700' 
                 : 'bg-green-50 border-green-200 text-green-700'
             }`}>
-              {isOverloaded ? 'Overloaded' : 'On Track'} // if false print on track if true print overloaded
+              {isOverloaded ? 'Overloaded' : 'On Track'}
             </div>
           </div>
           
