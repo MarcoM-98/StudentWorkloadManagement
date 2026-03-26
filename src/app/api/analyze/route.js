@@ -37,42 +37,59 @@ export async function POST(req) {
       messages: [
         {
           role: "system",
-          content: "You estimate how long assignments take students.",
+          content:
+            "You are a strict JSON generator. You ONLY return valid JSON. No text. No markdown. No explanation.",
         },
         {
           role: "user",
           content: `Read the following assignment and extract:
 
                     1. Estimated time to complete (in MINUTES, just a number)
-                    2. Due date (if mentioned, otherwise say "unknown")
+                    2. Due date (if mentioned, otherwise "unknown")
 
-                    Respond in this exact JSON format:
+                    Respond EXACTLY in this format:
                     {
-                    "minutes": number, 
-                    "due_date": "string" 
+                    "minutes": number,
+                    "due_date": "string"
                     }
 
-                    e.g. for an assignment that says "This assignment should take about 2 hours and is due on January 1st, 2026", you would respond with:
+                    Example:
                     {
                     "minutes": 120,
                     "due_date": "01JAN26"
                     }
-
-                    important: ONLY respond with the JSON, no explanations or extra text.
 
                     Assignment:${content}`,
         },
       ],
     });
 
-    // Pull the model's text response out of the API result
-    const result = response.choices[0].message.content;
+// Raw AI response (string)
+    const raw = response.choices[0].message.content;
 
-    // Send the estimate back to the frontend as JSON
+    // Clean potential markdown formatting
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+
+    // Safely parse JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      console.error("JSON parse failed:", cleaned);
+
+      // Fallback in case AI messes up
+      parsed = {
+        minutes: 0,
+        due_date: "unknown",
+      };
+    }
+
+    // Return structured response
     return NextResponse.json({
       success: true,
-      estimate: result,
+      data: parsed,
     });
+
   } catch (err) {
     console.error(err);
 
