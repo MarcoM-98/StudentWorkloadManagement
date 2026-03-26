@@ -1,5 +1,16 @@
+"use client";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import AssignmentCard from "@/components/AssignmentCard";
+import OverloadBanner from "@/components/OverloadBanner";
 
+// We define the shape of the data thats going to show
+type Task = {
+  _id: string;
+  title: string;
+  dueDate: string;
+  priorityPercentage: number;
+};
 export default function Home() {
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
