@@ -10,11 +10,18 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false); // Controls button disabled/loading text
   const [dragging, setDragging] = useState(false); // Tracks whether a file is being dragged over the box
 
+  // extracted / editable fields
+  const [assignmentTitle, setAssignmentTitle] = useState(""); // Editable assignment title after AI extraction
+  const [minutes, setMinutes] = useState(""); // Editable estimated minutes
+  const [dueDate, setDueDate] = useState(""); // Editable due date
+  const [showReview, setShowReview] = useState(false); // Controls whether review form is shown
+
   // Save selected file into state
   function handleSelectedFile(selectedFile) {
     if (!selectedFile) return;
     setFile(selectedFile);
     setMessage(""); // Clear old message when a new file is chosen
+    setShowReview(false); // Hide old review form when new file is chosen
   }
 
   // Runs when the user picks a file in the input
@@ -58,6 +65,7 @@ export default function UploadForm() {
 
     setLoading(true); // Start loading state
     setMessage(""); // Clear old message
+    setShowReview(false); // Hide review form while new analysis runs
 
     // FormData is used because file uploads are sent as multipart/form-data
     const formData = new FormData();
@@ -107,11 +115,17 @@ export default function UploadForm() {
       // Pull structured values out of returned JSON
       // ?. avoids crashing if data is missing
       // ?? gives fallback default values
-      const minutes = analyzeData.data?.minutes ?? 0;
-      const dueDate = analyzeData.data?.due_date ?? "unknown";
+      const extractedMinutes = analyzeData.data?.minutes ?? 0;
+      const extractedDueDate = analyzeData.data?.due_date ?? "unknown";
 
-      // Final result shown to the user
-      setMessage(`Estimated time: ${minutes} minutes | Due date: ${dueDate}`);
+      // Prefill editable review fields
+      setAssignmentTitle(file.name);
+      setMinutes(String(extractedMinutes));
+      setDueDate(extractedDueDate);
+      setShowReview(true);
+
+      // Final status shown before user reviews extracted data
+      setMessage("Review and edit the extracted assignment details below.");
     } catch (err) {
       // Catches network errors or unexpected failures
       console.error(err);
