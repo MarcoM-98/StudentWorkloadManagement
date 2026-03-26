@@ -1,4 +1,4 @@
-import Assignment from "./models/Assignment.js";
+import Assignment from "./model/Assignment.js";
 
 // CREATE
 export async function createAssignment(data) {
