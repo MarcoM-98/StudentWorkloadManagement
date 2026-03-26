@@ -146,7 +146,7 @@ export default function UploadForm() {
   }
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6 max-w-3xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Hidden file picker input */}
         <input
@@ -163,17 +163,20 @@ export default function UploadForm() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`cursor-pointer rounded border-2 border-dashed p-6 text-center ${
-            dragging ? "border-blue-500 bg-gray-900" : "border-gray-500"
+          className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
+            dragging
+              ? "border-blue-400 bg-zinc-900"
+              : "border-zinc-600 bg-zinc-950 hover:border-zinc-400"
           }`}
         >
-          <p className="font-medium">Drag and drop a file here</p>
-          <p className="text-sm opacity-80">or click to choose a file</p>
+          <p className="text-3xl mb-2">📄</p>
+          <p className="text-xl font-semibold text-white">Drag and drop a file here</p>
+          <p className="text-sm text-zinc-400">or click to choose a file</p>
 
           {/* Show selected file name */}
           {file && (
-            <p className="mt-3 text-sm">
-              Selected file: <span className="font-semibold">{file.name}</span>
+            <p className="mt-4 text-sm text-zinc-300">
+              Selected file: <span className="font-semibold text-white">{file.name}</span>
             </p>
           )}
         </div>
@@ -182,53 +185,58 @@ export default function UploadForm() {
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+          className="rounded-lg bg-blue-600 px-5 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
         >
           {loading ? "Uploading..." : "Upload"}
         </button>
       </form>
 
       {/* Status / result text appears here */}
-      {message && <p>{message}</p>}
+      {message && <p className="text-zinc-200">{message}</p>}
 
       {/* Review form appears after AI extracts details */}
       {showReview && (
-        <form onSubmit={handleReviewSubmit} className="space-y-4 rounded border p-4">
-          <h2 className="text-lg font-semibold">Review Extracted Assignment Details</h2>
+        <form
+          onSubmit={handleReviewSubmit}
+          className="space-y-5 rounded-xl border border-zinc-700 bg-zinc-950 p-6 shadow-lg"
+        >
+          <h2 className="text-2xl font-bold text-white">
+            Review Extracted Assignment Details
+          </h2>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium">Assignment Title</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-zinc-200">Assignment Title</label>
             <input
               type="text"
               value={assignmentTitle}
               onChange={(e) => setAssignmentTitle(e.target.value)}
-              className="w-full rounded border px-3 py-2 text-black"
+              className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium">Estimated Minutes</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-zinc-200">Estimated Minutes</label>
             <input
               type="number"
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="w-full rounded border px-3 py-2 text-black"
+              className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium">Due Date</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-zinc-200">Due Date</label>
             <input
               type="text"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full rounded border px-3 py-2 text-black"
+              className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
             />
           </div>
 
           <button
             type="submit"
-            className="rounded bg-green-600 px-4 py-2 text-white"
+            className="rounded-lg bg-green-600 px-5 py-3 text-white font-medium hover:bg-green-500"
           >
             Confirm Details
           </button>
