@@ -41,7 +41,26 @@ export async function POST(req) {
         },
         {
           role: "user",
-          content: `Estimate how many minutes this assignment will take:\n\n${content}`,
+          content: `Read the following assignment and extract:
+
+                    1. Estimated time to complete (in MINUTES, just a number)
+                    2. Due date (if mentioned, otherwise say "unknown")
+
+                    Respond in this exact JSON format:
+                    {
+                    "minutes": number, 
+                    "due_date": "string" 
+                    }
+
+                    e.g. for an assignment that says "This assignment should take about 2 hours and is due on January 1st, 2026", you would respond with:
+                    {
+                    "minutes": 120,
+                    "due_date": "01JAN26"
+                    }
+
+                    important: ONLY respond with the JSON, no explanations or extra text.
+
+                    Assignment:${content}`,
         },
       ],
     });
