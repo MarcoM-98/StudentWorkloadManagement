@@ -36,19 +36,20 @@ export default function Home() {
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <OverloadBanner />
+        <OverloadBanner /> // overload banner warning
         
         <div className="mt-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
             
             {/* overloaded badge! */}
-            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${
+            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${ // tailwind classes to switch between red
+                                                                                // if true, green if false
               isOverloaded 
                 ? 'bg-red-50 border-red-200 text-red-700' 
                 : 'bg-green-50 border-green-200 text-green-700'
             }`}>
-              {isOverloaded ? 'Overloaded' : 'On Track'}
+              {isOverloaded ? 'Overloaded' : 'On Track'} // if false print on track if true print overloaded
             </div>
           </div>
           
@@ -60,7 +61,7 @@ export default function Home() {
               </div>
             ) : tasks.length > 0 ? (
               tasks.map((task) => (
-                <AssignmentCard 
+                <AssignmentCard // if it finds work/assignments get their info
                   key={task._id}
                   title={task.title} 
                   dueDate={task.dueDate} 
