@@ -1,6 +1,5 @@
 "use client"; // Marks this as a client component so useState and browser events work
 
-import { useRef, useState } from "react";
 import { useEffect, useRef, useState } from "react"; // React hooks for managing state and refs
 
 export default function UploadForm() {
