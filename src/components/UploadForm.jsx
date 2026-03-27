@@ -145,13 +145,24 @@ export default function UploadForm() {
     setLoading(false); // End loading state no matter what
   }
 
-  // Runs when user confirms the extracted assignment details
+  // When the user submits the review form, save the details to localStorage (or could be sent to backend)
   function handleReviewSubmit(e) {
     e.preventDefault();
 
-    // Later this can save to DB / app state
+    const reviewedAssignment = {
+      id: Date.now(),
+      title: assignmentTitle,
+      minutes: Number(minutes),
+      dueDate,
+    };
+
+    const updatedAssignments = [...savedAssignments, reviewedAssignment];
+
+    setSavedAssignments(updatedAssignments);
+    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+
     setMessage(
-      `Reviewed assignment saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
+      `Saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
     );
   }
 
