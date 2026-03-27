@@ -263,6 +263,26 @@ export default function UploadForm() {
           </button>
         </form>
       )}
+      {savedAssignments.length > 0 && (
+        <div className="space-y-4 rounded-xl border border-zinc-700 bg-zinc-950 p-6 shadow-lg">
+          <h2 className="text-2xl font-bold text-white">Saved Local Assignments</h2>
+
+          <div className="space-y-3">
+            {savedAssignments.map((assignment) => (
+              <div
+                key={assignment.id}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+              >
+                <p className="text-white font-semibold">{assignment.title}</p>
+                <p className="text-zinc-300">
+                  Estimated Minutes: {assignment.minutes}
+                </p>
+                <p className="text-zinc-300">Due Date: {assignment.dueDate}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
