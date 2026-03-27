@@ -1,6 +1,7 @@
 "use client"; // Marks this as a client component so useState and browser events work
 
 import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; // React hooks for managing state and refs
 
 export default function UploadForm() {
   const fileInputRef = useRef(null); // Ref lets us open the hidden file input manually
@@ -9,6 +10,7 @@ export default function UploadForm() {
   const [message, setMessage] = useState(""); // Stores status text shown on screen
   const [loading, setLoading] = useState(false); // Controls button disabled/loading text
   const [dragging, setDragging] = useState(false); // Tracks whether a file is being dragged over the box
+  const [savedAssignments, setSavedAssignments] = useState([]); //local state to store saved assignments (can be expanded to use global state or DB later)
 
   // extracted / editable fields
   const [assignmentTitle, setAssignmentTitle] = useState(""); // Editable assignment title after AI extraction
@@ -23,6 +25,14 @@ export default function UploadForm() {
     setMessage(""); // Clear old message when a new file is chosen
     setShowReview(false); // Hide old review form when new file is chosen
   }
+
+  // Load saved assignments from localStorage when component mounts
+  useEffect(() => {
+  const stored = localStorage.getItem("savedAssignments");
+  if (stored) {
+    setSavedAssignments(JSON.parse(stored));
+  }
+  }, []);
 
   // Runs when the user picks a file in the input
   function handleFileChange(e) {
