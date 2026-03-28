@@ -1,6 +1,6 @@
 "use client"; // Marks this as a client component so useState and browser events work
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; // React hooks for managing state and refs
 
 export default function UploadForm() {
   const fileInputRef = useRef(null); // Ref lets us open the hidden file input manually
@@ -9,6 +9,7 @@ export default function UploadForm() {
   const [message, setMessage] = useState(""); // Stores status text shown on screen
   const [loading, setLoading] = useState(false); // Controls button disabled/loading text
   const [dragging, setDragging] = useState(false); // Tracks whether a file is being dragged over the box
+  const [savedAssignments, setSavedAssignments] = useState([]); //local state to store saved assignments (can be expanded to use global state or DB later)
 
   // extracted / editable fields
   const [assignmentTitle, setAssignmentTitle] = useState(""); // Editable assignment title after AI extraction
@@ -23,6 +24,14 @@ export default function UploadForm() {
     setMessage(""); // Clear old message when a new file is chosen
     setShowReview(false); // Hide old review form when new file is chosen
   }
+
+  // Load saved assignments from localStorage when component mounts
+  useEffect(() => {
+  const stored = localStorage.getItem("savedAssignments");
+  if (stored) {
+    setSavedAssignments(JSON.parse(stored));
+  }
+  }, []);
 
   // Runs when the user picks a file in the input
   function handleFileChange(e) {
@@ -135,13 +144,24 @@ export default function UploadForm() {
     setLoading(false); // End loading state no matter what
   }
 
-  // Runs when user confirms the extracted assignment details
+  // When the user submits the review form, save the details to localStorage (or could be sent to backend)
   function handleReviewSubmit(e) {
     e.preventDefault();
 
-    // Later this can save to DB / app state
+    const reviewedAssignment = {
+      id: Date.now(),
+      title: assignmentTitle,
+      minutes: Number(minutes),
+      dueDate,
+    };
+
+    const updatedAssignments = [...savedAssignments, reviewedAssignment];
+
+    setSavedAssignments(updatedAssignments);
+    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+
     setMessage(
-      `Reviewed assignment saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
+      `Saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
     );
   }
 
@@ -241,6 +261,26 @@ export default function UploadForm() {
             Confirm Details
           </button>
         </form>
+      )}
+      {savedAssignments.length > 0 && (
+        <div className="space-y-4 rounded-xl border border-zinc-700 bg-zinc-950 p-6 shadow-lg">
+          <h2 className="text-2xl font-bold text-white">Saved Local Assignments</h2>
+
+          <div className="space-y-3">
+            {savedAssignments.map((assignment) => (
+              <div
+                key={assignment.id}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+              >
+                <p className="text-white font-semibold">{assignment.title}</p>
+                <p className="text-zinc-300">
+                  Estimated Minutes: {assignment.minutes}
+                </p>
+                <p className="text-zinc-300">Due Date: {assignment.dueDate}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
