@@ -1,4 +1,16 @@
-import Assignment from "./model/Assignment.js";
+import Assignment from "../model/Assignment.js";
+import { assignmentWithSettingsPipeline } from "./pipeline.js";
+
+export const getAssignmentsWithSettings = async (userId) => {
+    try {
+        const results = await Assignment.aggregate(
+            assignmentWithSettingsPipeline(userId)
+        );
+        return results;
+    } catch (err) {
+        throw new Error(`Aggregation failed: ${err.message}`);
+    }
+};
 
 // CREATE
 export async function createAssignment(data) {

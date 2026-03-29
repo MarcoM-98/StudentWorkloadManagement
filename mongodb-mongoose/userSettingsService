@@ -1,0 +1,50 @@
+import UserSetting from "../model/UserSetting.js";
+
+
+//CREATE user setting
+
+export const createUserSetting = async (data) => {
+    try {
+        const setting = await UserSetting.create(data);
+        return setting;
+    } catch (err) {
+        throw new Error(`Create failed: ${err.message}`);
+    }
+};
+
+
+// READ user setting by userId
+
+export const getUserSettingByUserId = async (userId) => {
+    try {
+        return await UserSetting.findOne({ userId });
+    } catch (err) {
+        throw new Error(`Read failed: ${err.message}`);
+    }
+};
+
+
+//UPDATE user setting by userId
+
+export const updateUserSetting = async (userId, updates) => {
+    try {
+        const updated = await UserSetting.findOneAndUpdate(
+            { userId },
+            updates,
+            { new: true, runValidators: true }
+        );
+        return updated;
+    } catch (err) {
+        throw new Error(`Update failed: ${err.message}`);
+    }
+};
+
+// DELETE user setting by userId
+
+export const deleteUserSetting = async (userId) => {
+    try {
+        return await UserSetting.deleteOne({ userId });
+    } catch (err) {
+        throw new Error(`Delete failed: ${err.message}`);
+    }
+};
