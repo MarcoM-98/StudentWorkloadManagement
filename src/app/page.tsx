@@ -16,7 +16,7 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Hardcoding to see if it works , we'll fetch it from the DB later ( on my next scrum )
+
   const isOverloaded = false; 
 
   // 2. This logic will simulate a database fetch
