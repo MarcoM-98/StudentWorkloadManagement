@@ -1,12 +1,12 @@
 import readline from 'readline';
-import { connectDB } from "./config/db.js";
+import { connectDB } from "./db.js";
 import {
     createAssignment,
     getAssignments,
     getAssignmentById,
     updateAssignment,
     deleteAssignment
-} from '../services/assignmentService.js';
+} from "./assignmentService.js";
 
 await connectDB();
 
@@ -96,6 +96,7 @@ function menu() {
                 console.log("Exiting...");
                 rl.close();
                 process.exit(0);
+
 
             default:
                 console.log("Invalid choice");
