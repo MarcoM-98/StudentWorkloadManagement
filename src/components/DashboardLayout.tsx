@@ -8,8 +8,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">GitYourWorkDone</h2>
         </div>
-        <nav className="px-4 mt-6">
-          <a href="#" className="block py-2 px-4 rounded bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-medium">Dashboard</a>
+        <nav className="px-4 mt-6 space-y-2">
+          <a href="/" className="block py-2 px-4 rounded bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-medium">Dashboard</a>
+          <a href="/assignments" className="block py-2 px-4 rounded bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-medium">Assignments</a>
         </nav>
       </aside>
 
