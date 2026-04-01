@@ -1,6 +1,4 @@
 # GitYourWorkDone
-> Outline a brief description of your project.
-> Live demo [_here_](https://www.example.com). <!-- If you have the project hosted somewhere, include the link here. -->
 
 ## Table of Contents
 * [General Info](#general-information)
@@ -196,3 +194,66 @@ Kyle:
 • Add unit tests for upload validation and AI response handling
 
 
+
+## Features
+
+## Sprint 2
+
+## Contributions
+
+
+
+**Kyle:** "designed and implemented the document upload and AI analysis pipeline, including backend file storage, a frontend upload interface with progress feedback, integration with the OpenAI API for extracting workload estimates, and a review/edit interface for confirming assignment details before saving. Also added validation and testing for upload handling and AI responses."
+
+- Jira Task: Kyle - design document upload flow and supported file types
+  - SCRUM-12, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-41-Install-nextjs-into-project-directory-add-empty-project-file-template)
+
+- Jira Task: Kyle - design overload calculation rules and edge cases  
+  - SCRUM-13, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-7-design-overload-rules)
+
+- Jira Task: Kyle - implement overload calculation logic  
+  - SCRUM-14, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-8-Implement-overload-calculation-logic)
+
+- Jira Task: Kyle - create API route for overload status  
+  - SCRUM-15, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-9-Create-API-route/service-for-overload-status)
+
+- Jira Task: Kyle - build overload warning UI component  
+  - SCRUM-16, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-10-Testing-Branch)
+
+  - Jira Task: Kyle - build overload warning UI component  
+  - SCRUM-17, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-10-Testing-Branch)
+
+
+
+
+
+## Reports
+
+![Burnup](./image/Sprint-2-Burnup.png)
+
+
+## Next Steps
+
+Kyle:
+
+• Extend document analysis to support PDF files by extracting text before sending to OpenAI
+
+• Improve AI response validation and error handling to prevent invalid JSON and fallback values (e.g., 0 minutes issue)
+
+• Refactor analysis pipeline to ensure consistent structured output (minutes, due date, title)
+
+• Integrate saved assignments into overload calculation logic (use localStorage as source of truth)
+
+• Build a workload visualization component showing total minutes per upcoming days
+
+• Create a simple bar chart or timeline view of assignments by due date
+
+• Display a weekly workload breakdown (e.g., total minutes per day for next 7 days)
+
+• Add a “time remaining vs required work” visual indicator (progress-style or gauge)
+
+• Highlight overloaded days visually (color-coded red vs green)
+
+• Add ability to delete and edit saved assignments in the UI
+
+• Improve upload UX by showing loading/progress states during analysis
