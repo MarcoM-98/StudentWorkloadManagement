@@ -1,5 +1,18 @@
-import UserSetting from "../model/UserSetting.js";
+import UserSetting from "./model/UserSetting.js";
 
+// Default settings
+export const defaultSettings = {
+    dailyStudyMinutes: 120,
+    studyDaysPerWeek: 5,
+    breakDuration: 30,
+    maxWeeklyWorkload: 600
+};
+
+// Get default settings
+export const getDefaultSettings = (userId) => ({
+    userId,
+    ...defaultSettings
+});
 
 //CREATE user setting
 
