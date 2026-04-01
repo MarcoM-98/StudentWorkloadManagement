@@ -201,6 +201,27 @@ Kyle:
 
 ## Contributions
 
+**Kacin:** "Based off of logic layered functions created the backend user settings system, including CRUD APIs, CLI input, default configurations, data persistence, and aggregation with assignments using MongoDB, mongoose, Express, and Node.js.
+
+SCRUM-34 – Implement CRUD User Settings API Route
+Jira: https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-34  
+Description: Developed RESTful API endpoints to create and update user settings using Express and MongoDB with a structured service layer.
+
+SCRUM-57 – Default User Settings
+Jira: https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-57
+Description: Implemented default user setting values to ensure consistent initialization when no prior settings exist.
+
+SCRUM-60 – Basic User Input Through CLI
+Jira: https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-60
+Description: Built a CLI tool to input and test user settings for validating CRUD operations and database interaction.
+
+SCRUM-58 – Retrieve User Settings and Assignment
+Jira: https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-58
+Description: Created a MongoDB aggregation pipeline using $lookup to combine assignment data with corresponding user settings.
+
+SCRUM-36 – Persist User Settings Across Sessions
+Jira: https://cs3398-enceladus-s26.atlassian.net/browse/SCRUM-36
+Description: Ensured user settings are stored and consistently retrieved from MongoDB to maintain persistence across sessions.
 
 
 **Kyle:** "designed and implemented the document upload and AI analysis pipeline, including backend file storage, a frontend upload interface with progress feedback, integration with the OpenAI API for extracting workload estimates, and a review/edit interface for confirming assignment details before saving. Also added validation and testing for upload handling and AI responses."
