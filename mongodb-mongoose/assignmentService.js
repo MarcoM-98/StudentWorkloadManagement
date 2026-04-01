@@ -1,4 +1,4 @@
-import Assignment from "../model/Assignment.js";
+import Assignment from "./model/Assignment.js";
 import { assignmentWithSettingsPipeline } from "./pipeline.js";
 
 export const getAssignmentsWithSettings = async (userId) => {
