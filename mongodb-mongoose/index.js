@@ -26,7 +26,7 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/settings", userSettingsRoutes);
 
 const mongoURI = process.env.MONGODB_URI;
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 mongoose.connect(mongoURI)
     .then(() => {
