@@ -257,3 +257,30 @@ Kyle:
 • Add ability to delete and edit saved assignments in the UI
 
 • Improve upload UX by showing loading/progress states during analysis
+
+
+
+
+Marco "developed the UI, designed the UI Dashboard layout, UI integration to backend and helped design the UI logic layer updating old functions into newer compatible for mongodb."
+
+Jira Task: Marco - UI Development
+- Scrum-53, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-55-ui-integration-to-backend)
+
+Jira Task: Marco - UI Dashboard Layout
+- Scrum-54, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-54-ui-dashboard-layout)
+
+Jira Task: Marco - UI Integration to backend
+- Scrum-55, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-55-ui-integration-to-backend)
+
+Jira Task: Marco - UI Logic Layer
+- Scrum-56, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-56-ui-logic-layer) 
+
+Jira Task: Marco - Updating functions to mongodb
+- Scrum-66, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-66-updating-functions-to-mongodb)
+
+Next Steps:
+- Designing the dashboard into a better user friendly layout
+- Adding calendar and other user friendly widgets
+- Study room/practice if user has time to spare.
+- Dashboard sorting & filtering logic (ex. looking at completed tasks or Closest due date, higher priority etc)
+
