@@ -42,3 +42,6 @@ const userSettingSchema = new Schema(
         versionKey: false
     }
 );
+
+const UserSetting = model('UserSetting', userSettingSchema);
+export default UserSetting;
