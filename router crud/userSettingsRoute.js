@@ -4,7 +4,7 @@ import {
     getUserSettingByUserId,
     updateUserSetting,
     deleteUserSetting
-} from "../services/userSettingsService.js";
+} from "../mongodb-mongoose/userSettingsService.js";
 
 const router = express.Router();
 
