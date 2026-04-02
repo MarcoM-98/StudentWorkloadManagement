@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loading...</title>
+  <style>
+    body {
+      font-family: Arial;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:#f4f6f8;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <h2>Loading your assignments...</h2>
+  <p>Please approve Duo if prompted.</p>
+
+  <script>
+    async function checkStatus() {
+      try {
+        const res = await fetch("/status", { cache: "no-store" });
+        const data = await res.json();
+
+        console.log("Loading status:", data);
+
+        if (data.finished) {
+          window.location.href = "/dashboard";
+        } else {
+          setTimeout(checkStatus, 2000);
+        }
+      } catch (err) {
+        console.error(err);
+        setTimeout(checkStatus, 3000);
+      }
+    }
+
+    checkStatus();
+  </script>
+</body>
+</html>

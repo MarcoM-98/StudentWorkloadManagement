@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      background:#f4f6f8;
+      padding:20px;
+    }
+    h1 {
+      text-align:center;
+    }
+    .assignments {
+      max-width:600px;
+      margin:auto;
+    }
+    .assignment {
+      background:white;
+      padding:15px;
+      margin-top:10px;
+      border-radius:8px;
+    }
+    .date {
+      font-weight:bold;
+      margin-top:20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Your Canvas Assignments</h1>
+  <div id="dashboard" class="assignments"></div>
+
+  <script>
+    async function loadDashboard() {
+      const dashboard = document.getElementById("dashboard");
+
+      try {
+        const res = await fetch("/status", { cache: "no-store" });
+        const data = await res.json();
+
+        console.log("Dashboard status:", data);
+
+        const assignmentsByDay = data.assignmentsByDay || {};
+        dashboard.innerHTML = "";
+
+        if (!data.finished) {
+          dashboard.innerHTML = "<p>Assignments are still loading...</p>";
+          return;
+        }
+
+        if (Object.keys(assignmentsByDay).length === 0) {
+          dashboard.innerHTML = "<p>No assignments found.</p>";
+          return;
+        }
+
+        for (const date of Object.keys(assignmentsByDay)) {
+          const header = document.createElement("div");
+          header.className = "date";
+          header.textContent = date;
+          dashboard.appendChild(header);
+
+          assignmentsByDay[date].forEach(a => {
+            const div = document.createElement("div");
+            div.className = "assignment";
+            div.textContent = `${a.time} - ${a.title}`;
+            dashboard.appendChild(div);
+          });
+        }
+      } catch (err) {
+        console.error("Dashboard error:", err);
+        dashboard.innerHTML = "<p>Error loading assignments.</p>";
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
