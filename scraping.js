@@ -1,89 +1,113 @@
- import puppeteer from "puppeteer";
- //using api instead of grabbing html buttons and whatnot 
+import express from "express";
+import bodyParser from "body-parser";
+import puppeteer from "puppeteer";
+import path from "path";
 
-(async () => {
-  const browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-    userDataDir: "./tmp"
-  });
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("."));
 
-  const page = await browser.newPage();
+let assignmentsData = { finished: false, assignmentsByDay: {} };
 
-  let apiAssignments = [];
+app.get("/", (req, res) => res.sendFile(path.resolve("./index.html")));
+app.get("/loading", (req, res) => res.sendFile(path.resolve("./loading.html")));
+app.get("/dashboard", (req, res) => res.sendFile(path.resolve("./dashboard.html")));
+app.get("/status", (req, res) => res.json(assignmentsData));
 
-  //Canvas API scraping :3
-  page.on("response", async (response) => {
-    try {
-      const url = response.url();
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
 
-      if (url.includes("/api/v1/calendar_events")) {
-        const data = await response.json();
-        console.log("API SCRAPPING");
+  assignmentsData = { finished: false, assignmentsByDay: {} };
+  res.redirect("/loading");
 
-        apiAssignments = data.filter(e => e.type === "assignment");
-      }
-    } catch {}
-  });
+  let browser;
 
   try {
-    // Go to discovery page
+    browser = await puppeteer.launch({
+      headless: false,
+      defaultViewport: null,
+      userDataDir: "./tmp"
+    });
+
+    const page = await browser.newPage();
+
+    //go to discovery
     await page.goto("https://discovery.canvas.txst.edu/", {
       waitUntil: "networkidle2"
     });
 
-    console.log("URL:", page.url());
-    await page.screenshot({ path: "step1_discovery.png" });
+    //TXST login
+    await page.waitForSelector("#txst-login", { visible: true });
+    await page.click("#txst-login");
 
-    //Click TXST login
-    const loginBtn = await page.$("#txst-login");
+    await new Promise(r => setTimeout(r, 3000));
 
-    if (loginBtn) {
-      await loginBtn.click();
-      await new Promise(r => setTimeout(r, 5000));
-    }
+    // Get current active page after redirect
+    const pages = await browser.pages();
+    const loginPage = pages[pages.length - 1];
 
-    console.log("After click URL:", page.url());
-    await page.screenshot({ path: "step2_after_click.png" });
+    console.log("URL after click:", loginPage.url());
 
-    //Try to find login form dynamically without grabbing actual buttons
-    const usernameInput = await page.$("input[type='text']");
-    const passwordInput = await page.$("input[type='password']");
+    let apiAssignments = [];
 
-    if (usernameInput && passwordInput) {
-      console.log("Login detected");
+    // Listen for Canvas calendar API responses on the real page
+    loginPage.on("response", async (response) => {
+      try {
+        const url = response.url();
 
-      await page.type("input[type='text']", "YOUR_NETID");
-      await page.type("input[type='password']", "YOUR_PASSWORD");
+        if (url.includes("/api/v1/calendar_events")) {
+          const data = await response.json();
+          console.log("RAW API RESPONSE:", data);  //terminal
 
-      await page.screenshot({ path: "step3_filled_form.png" }); //sreenshot for verification 
+          apiAssignments = Array.isArray(data)
+            ? data.filter(e => e.type === "assignment" || e.assignment)
+            : [];
 
-      await page.click("button[type='submit']");
+          console.log("FILTERED ASSIGNMENTS:", apiAssignments);
+        }
+      } catch (err) {
+        console.error("Response listener error:", err);
+      }
+    });
 
-      console.log("⏳ Waiting for Duo...");
-      await new Promise(r => setTimeout(r, 60000)); //wat is new promise?
-
+    // Step 3: only log in if not already logged in
+    if (
+      loginPage.url().includes("login_success") ||
+      loginPage.url().includes("canvas.txstate.edu")
+    ) {
+      console.log("Already logged in, skipping login form");
     } else {
-      console.log("No login form prob already logged in");
+      console.log("Not logged in, filling form...");
+
+      await loginPage.waitForSelector(
+        "#username, input[name='username'], input[type='text']",
+        { visible: true, timeout: 30000 }
+      );
+
+      await loginPage.type(
+        "#username, input[name='username'], input[type='text']",
+        username
+      );
+
+      await loginPage.type('input[name="j_password"]', password);
+
+      await loginPage.click('button[name="_eventId_proceed"], button[type="submit"]');
+
+      console.log("Waiting for Duo...");
+      await new Promise(r => setTimeout(r, 60000));
     }
 
-    console.log("After login URL:", page.url());
-    await page.screenshot({ path: "step4_after_login.png" }); //ss for the url after log in
-
-    // Go to calendar
-    await page.goto("https://canvas.txstate.edu/calendar", {
+    // Step 4: open calendar so Canvas triggers its own API request
+    await loginPage.goto("https://canvas.txstate.edu/calendar", {
       waitUntil: "networkidle2"
     });
 
-    console.log("Calendar loaded");
-    await page.screenshot({ path: "step5_calendar.png" }); //ss of calander for verification
+    console.log("Calendar page loaded");
 
-    // waiting for api 
+    // Wait for the API response listener to capture the assignments
     await new Promise(r => setTimeout(r, 8000));
 
-    console.log("📥 Assignments:", apiAssignments);
-
-    // Groupinf the assignments and everything given by ai
+    // Group assignments by day
     const assignmentsByDay = {};
 
     apiAssignments.forEach(a => {
@@ -94,20 +118,37 @@
       }
 
       assignmentsByDay[date].push({
-        title: a.title,
+        title: a.title || "Untitled Assignment",
         time: a.start_at
           ? new Date(a.start_at).toLocaleTimeString()
           : "No time"
       });
     });
 
-    console.log("Grouped:", assignmentsByDay);
+    console.log("GROUPED ASSIGNMENTS:", assignmentsByDay);
+
+    assignmentsData = {
+      finished: true,
+      assignmentsByDay
+    };
+
+    console.log("Assignments ready");
 
     await browser.close();
-    console.log("DONE");
-
   } catch (err) {
     console.error("ERROR:", err);
-    await browser.close();
+
+    assignmentsData = {
+      finished: true,
+      assignmentsByDay: {}
+    };
+
+    if (browser) {
+      await browser.close();
+    }
   }
-})(); 
+});
+
+app.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
