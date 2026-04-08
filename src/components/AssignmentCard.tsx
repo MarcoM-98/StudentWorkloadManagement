@@ -32,8 +32,8 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
 };
 if (isEditing) {
     return (
-        {/*banner and display bar title*/}
       <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg border-2 border-blue-500 mb-4 shadow-md transition-all">
+      {/*banner and display bar title*/}
         <div className="space-y-3">
           <input
             className="w-full p-2 rounded border dark:bg-zinc-800 dark:border-zinc-700 outline-none focus:ring-1 focus:ring-blue-500"
