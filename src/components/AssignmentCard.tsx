@@ -20,7 +20,7 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
     const [editData, setEditData] = useState({
         title: title || "",
         dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
-        duration: duration ?? 0
+        duration: (duration ?? duration > 0) ? duration : 60
         });
         const handleSave = (e: React.MouseEvent) => {
             e.stopPropagation();
