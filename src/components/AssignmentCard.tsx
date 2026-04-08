@@ -32,7 +32,7 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
 };
 if (isEditing) {
     return (
-        // banner and display bar title
+        {/*banner and display bar title*/}
       <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg border-2 border-blue-500 mb-4 shadow-md transition-all">
         <div className="space-y-3">
           <input
@@ -43,7 +43,7 @@ if (isEditing) {
           />
           <div className="grid grid-cols-2 gap-3">
             <div>
-            // banner and display bar due date
+            {/* banner and display bar due date*/}
               <label className="text-[10px] uppercase text-zinc-500 ml-1">Due Date</label>
               <input
                 type="date"
@@ -53,7 +53,7 @@ if (isEditing) {
               />
             </div>
             <div>
-            // banner and display bar for duration
+            {/* banner and display bar for duration */ }
               <label className="text-[10px] uppercase text-zinc-500 ml-1">Duration (min)</label>
               <input
                 type="number"
@@ -86,7 +86,7 @@ if (isEditing) {
     >
       <div>
         <h3 className="text-md font-bold">{editData.title}</h3>
-        <p className="text-sm text-zinc-500">Due: {editData.dueData ? new Date(editData.dueDate).toLocaleDateString(): "No date"} • {editData.duration} mins </p>
+        <p className="text-sm text-zinc-500">Due: {editData.dueDate ? new Date(editData.dueDate).toLocaleDateString(): "No date"} • {editData.duration} mins </p>
       </div>
       <div className="flex flex-col items-end">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
