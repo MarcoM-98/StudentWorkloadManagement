@@ -85,8 +85,8 @@ if (isEditing) {
     onClick={() => setIsEditing(true)}
     >
       <div>
-        <h3 className="text-md font-bold">{title}</h3>
-        <p className="text-sm text-zinc-500">Due: {new Date(dueDate).toLocaleDateString()}</p>
+        <h3 className="text-md font-bold">{editData.title}</h3>
+        <p className="text-sm text-zinc-500">Due: {editData.dueData ? new Date(editData.dueDate).toLocaleDateString(): "No date"} • {editData.duration} mins </p>
       </div>
       <div className="flex flex-col items-end">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
@@ -94,5 +94,5 @@ if (isEditing) {
         </span>
       </div>
     </div>
-  );
+);
 }
