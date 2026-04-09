@@ -26,12 +26,36 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
         useEffect(()=> {
             if(!isEditing) // only autosave if user is actually editing
             return;
+            
+        const delayDebounceFn = setTimeout(async () => { // Start a 1-second timer of inactivity before executingof inactivity before executing
+            setIsSaving(true); // show a "Saving..." indicator to the user
+            try { // try block to sends an asynchronous network request to our route using the specific assignment ID
+                const response = await fetch(`/api/assignments/${id}`, {
+                    method: 'PATCH',  // Specifies a partial update (PATCH) rather than replacing the whole document like title, date,time etc
+                    headers: { 'Content-Type': 'application/json' }, // tells the server to expect a json formatted data/file
+                    body: JSON.stringify({ // Converts our JavaScript object into a string for transmission except duration, it will be sent as a number
+                        title: editData.title,
+                        dueDate: editData.dueDate,
+                        duration: Number(editData.duration)
+                    }),
+                });
+        
+                if (response.ok && onUpdate) {// If the server confirms the save and onUpdate will 
+                    onUpdate(); // trigger a refresh of the main dashboard to recalculate the Priority %
+                }
+            } catch (error) {
+                console.error("Auto-save failed:", error); // If the network is down or the server crashes, log the error to the console for debugging
+            } finally {
+                setTimeout(() => setIsSaving(false), 500); // waits 500ms before removing the "Saving" text so it doesn't flicker too fast
+            }
+        }, 1000); // The "Debounce" duration;  1 second 
 
-        }
-        )
+        //core of the debounce logic. 
+        // If the user types another character before the 1-second timer finishes, 
+        // this line kills the old timer and resets the clock.
+        return () => clearTimeout(delayDebounceFn);
 
-
-
+    }, [editData, isEditing, id, onUpdate]); // Dependency Array: Tells React to re-run this entire block whenever any of these 4 values change
 
         const handleSave = (e: React.MouseEvent) => {
             e.stopPropagation();
@@ -43,6 +67,8 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
 };
 if (isEditing) {
     return (
+      <> 
+        {isSaving && <p className="text-[10px] text-blue-500 font-bold animate-pulse mb-1 ml-1">Autosaving...</p>}
       <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg border-2 border-blue-500 mb-4 shadow-md transition-all">
       {/*banner and display bar title*/}
         <div className="space-y-3">
@@ -87,8 +113,9 @@ if (isEditing) {
           </div>
         </div>
       </div>
+    </>
     );
-  }
+}
 
   return (
     <div 
