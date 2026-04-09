@@ -1,79 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Canvas Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Canvas Assignments</title>
   <style>
     body {
-      font-family: Arial;
-      background:#f4f6f8;
-      padding:20px;
+      font-family: Arial, sans-serif;
+      background: #f7f3fb;
+      margin: 0;
+      padding: 30px;
+      color: #333;
     }
+
     h1 {
-      text-align:center;
+      text-align: center;
+      color: #7a3e7d;
+      margin-bottom: 30px;
     }
-    .assignments {
-      max-width:600px;
-      margin:auto;
+
+    .day-block {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 0 auto 20px auto;
+      max-width: 900px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     }
+
+    .day-title {
+      color: #9e58c2;
+      margin-top: 0;
+      margin-bottom: 18px;
+    }
+
     .assignment {
-      background:white;
-      padding:15px;
-      margin-top:10px;
-      border-radius:8px;
+      border-top: 1px solid #eee;
+      padding: 14px 0;
     }
-    .date {
-      font-weight:bold;
-      margin-top:20px;
+
+    .assignment:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .assignment h3 {
+      margin: 0 0 8px 0;
+      color: #4f2a63;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .description {
+      line-height: 1.5;
+      color: #444;
+      white-space: pre-wrap;
+    }
+
+    .empty {
+      text-align: center;
+      background: white;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    .error {
+      color: #b00020;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <h1>Your Canvas Assignments</h1>
-  <div id="dashboard" class="assignments"></div>
+
+  <div id="error" class="error"></div>
+  <div id="assignments"></div>
 
   <script>
-    async function loadDashboard() {
-      const dashboard = document.getElementById("dashboard");
+    const stored = sessionStorage.getItem("assignmentsData");
+    const data = stored
+      ? JSON.parse(stored)
+      : { assignmentsByDay: {}, error: "No assignment data found." };
 
-      try {
-        const res = await fetch("/status", { cache: "no-store" });
-        const data = await res.json();
+    const container = document.getElementById("assignments");
+    const errorBox = document.getElementById("error");
 
-        console.log("Dashboard status:", data);
-
-        const assignmentsByDay = data.assignmentsByDay || {};
-        dashboard.innerHTML = "";
-
-        if (!data.finished) {
-          dashboard.innerHTML = "<p>Assignments are still loading...</p>";
-          return;
-        }
-
-        if (Object.keys(assignmentsByDay).length === 0) {
-          dashboard.innerHTML = "<p>No assignments found.</p>";
-          return;
-        }
-
-        for (const date of Object.keys(assignmentsByDay)) {
-          const header = document.createElement("div");
-          header.className = "date";
-          header.textContent = date;
-          dashboard.appendChild(header);
-
-          assignmentsByDay[date].forEach(a => {
-            const div = document.createElement("div");
-            div.className = "assignment";
-            div.textContent = `${a.time} - ${a.title}`;
-            dashboard.appendChild(div);
-          });
-        }
-      } catch (err) {
-        console.error("Dashboard error:", err);
-        dashboard.innerHTML = "<p>Error loading assignments.</p>";
-      }
+    if (data.error) {
+      errorBox.textContent = data.error;
     }
 
-    loadDashboard();
+    const assignmentsByDay = data.assignmentsByDay || {};
+    const dates = Object.keys(assignmentsByDay).sort();
+
+    if (dates.length === 0) {
+      container.innerHTML = `
+        <div class="empty">
+          <p>No assignments found.</p>
+        </div>
+      `;
+    } else {
+      dates.forEach((day) => {
+        const dayBlock = document.createElement("div");
+        dayBlock.className = "day-block";
+
+        const dayTitle = document.createElement("h2");
+        dayTitle.className = "day-title";
+        dayTitle.textContent = day;
+        dayBlock.appendChild(dayTitle);
+
+        assignmentsByDay[day].forEach((assignment) => {
+          const item = document.createElement("div");
+          item.className = "assignment";
+
+          item.innerHTML = `
+            <h3>${assignment.title}</h3>
+            <div class="meta"><strong>Time:</strong> ${assignment.time}</div>
+            <div class="description"><strong>Description:</strong> ${assignment.descriptionText}</div>
+          `;
+
+          dayBlock.appendChild(item);
+        });
+
+        container.appendChild(dayBlock);
+      });
+    }
   </script>
 </body>
 </html>

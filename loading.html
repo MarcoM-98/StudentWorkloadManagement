@@ -1,40 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Loading...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading Assignments</title>
   <style>
     body {
-      font-family: Arial;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-      background:#f4f6f8;
-      flex-direction: column;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f8d3e0, #d9c2ff);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      width: 420px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #7a3e7d;
+      margin-bottom: 12px;
+    }
+
+    p {
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .spinner {
+      margin: 20px auto 0;
+      width: 45px;
+      height: 45px;
+      border: 5px solid #eee;
+      border-top: 5px solid #b76edc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #status-text {
+      margin-top: 16px;
+      color: #666;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <h2>Loading your assignments...</h2>
-  <p>Please approve Duo if prompted.</p>
+  <div class="box">
+    <h1>Loading your assignments...</h1>
+    <p>Please complete Duo authentication if needed and keep this tab open.</p>
+    <div class="spinner"></div>
+    <div id="status-text">Checking Canvas...</div>
+  </div>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("sessionId");
+    const statusText = document.getElementById("status-text");
+
     async function checkStatus() {
       try {
-        const res = await fetch("/status", { cache: "no-store" });
-        const data = await res.json();
-
-        console.log("Loading status:", data);
+        const response = await fetch(`/status?sessionId=${sessionId}`);
+        const data = await response.json();
 
         if (data.finished) {
-          window.location.href = "/dashboard";
-        } else {
-          setTimeout(checkStatus, 2000);
+          sessionStorage.setItem("assignmentsData", JSON.stringify(data));
+          window.location.href = `/dashboard?sessionId=${sessionId}`;
+          return;
         }
+
+        statusText.textContent = "Still loading assignments...";
       } catch (err) {
-        console.error(err);
-        setTimeout(checkStatus, 3000);
+        statusText.textContent = "Having trouble checking status...";
       }
+
+      setTimeout(checkStatus, 2000);
     }
 
     checkStatus();
