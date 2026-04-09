@@ -9,7 +9,8 @@ type Task = {
   _id: string;
   title: string;
   dueDate: string;
-  priorityPercentage: number;
+  priority: string;
+  customPercentage?: number | null; // ? optional it may exist or not, also user may override the percentage to a custom one
   id:number;
   duration:number;
 };
@@ -47,6 +48,16 @@ export default function Home() {
         setLoading(false);
       }
     }
+    const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
+    if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
+        return customNumber; 
+    } 
+    // if notusing custom then keep using this if they have those words set
+      if (priorityWord === 'IMMEDIATE') return 100;
+      if (priorityWord === 'medium') return 50;
+      if (priorityWord === 'low') return 20;
+      return 0; // fallback just in case
+    };
 
     // run the function we just created
    useEffect(() => { fetchAssignments();
@@ -55,7 +66,7 @@ export default function Home() {
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <OverloadBanner /> // overload banner warning
+        <OverloadBanner /> {/* overload banner warning*/}
         
         <div className="mt-6">
           <div className="flex justify-between items-center mb-6">
@@ -86,13 +97,15 @@ export default function Home() {
                   title={task.title} 
                   dueDate={task.dueDate} 
                   duration={task.duration || 0} // Pass the duration
-                  priorityPercentage={task.priorityPercentage} 
+                  priorityPercentage={calculatePriority(task.priority, task.customPercentage)} 
+                  priorityWord={task.priority} 
+                  customPercentage={task.customPercentage}
                   onUpdate={fetchAssignments} // Pass the refresh function
                 />
               ))
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> // show caught up message if no work left
+                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> {/* show caught up message if no work left*/}
               </div>
             )}
           </div>
