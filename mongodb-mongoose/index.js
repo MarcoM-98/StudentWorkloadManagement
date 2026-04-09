@@ -12,7 +12,7 @@ app.use(express.json());
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/settings", userSettingsRoutes);
 
-const mongoURI = process.env.MONGODB_URI || "mongodb://4tbYpyq1uXt5JasL@cluster0.it2tx.mongodb.net/?retryWrites=true&w=majority";
+const mongoURI = process.env.MONGODB_URI;
 
 mongoose.connect(mongoURI)
     .then(() => {
