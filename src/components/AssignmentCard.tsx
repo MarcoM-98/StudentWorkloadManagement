@@ -147,9 +147,18 @@ if (isEditing) {
           </div>
           <div className="flex justify-end gap-2 text-sm pt-1">
             <button 
-                onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} 
-                className="text-zinc-500 hover:text-zinc-700 px-2 py-1"
-            >
+                onClick={(e) => { e.stopPropagation();   // Reset the typing back to to what it was before
+                        setEditData({
+                            title: title || "",
+                            dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "",
+                            duration: (duration ?? duration > 0) ? duration : 60,
+                            priority: priorityWord || "low",
+                            customPercentage: customPercentage ?? null
+                        });
+                        setIsEditing(false); 
+                    }} 
+                    className="text-zinc-500 hover:text-zinc-700 px-2 py-1"
+                >
                 Cancel
             </button>
             <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition-colors">
