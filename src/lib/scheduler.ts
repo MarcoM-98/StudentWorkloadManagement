@@ -39,8 +39,8 @@ export const PlanGenerator = (assignments: AssignmentDocument[], AvailableTime: 
 
     // 3. Effort Factor (Longer duration tasks get higher priority within their tier)
     // Using 10 points for effort
-    const effort = (task as any).duration_inMinutess || 60; // if task does not have a duration yet
-                                                            // assume is 60 minutes
+    const effort = (Number(task.duration) > 0) ? Number(task.duration) : 60; // if task does not have a duration yet
+                                                 // assume is 60 minutes
     const effortScore = Math.min(effort / 12, 10); // This prevents a massive ex.10-hour task from accidentally outranking a small but "IMMEDIATE" task.
 
     // Combined Total
@@ -59,7 +59,7 @@ const sortedAssignments = scoredAssignments.sort((a, b) => b.priorityPercentage 
  // SCRUM-44: Calculate remaining time by subtracting minutesSpent from duration
  // SCRUM-45: Deadline detection system 
 const totalTime = activeAssignments.reduce((acc, curr) => {
-  const duration = curr.duration_inMinutess || 60;
+  const duration = (Number(curr.duration) > 0) ? Number(curr.duration) : 60;
   const spent = curr.minuteSpent || 0;
   const remaining = duration - spent;
   return acc + (remaining > 0 ? remaining : 0);

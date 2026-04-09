@@ -10,6 +10,8 @@ type Task = {
   title: string;
   dueDate: string;
   priorityPercentage: number;
+  id:number;
+  duration:number;
 };
 export default function Home() {
   // 1. The "Memory" (State)
@@ -20,7 +22,6 @@ export default function Home() {
   const isOverloaded = false; 
 
   // 2. This logic will simulate a database fetch
-  useEffect(() => {
     // asynchronous function to handle the internet traffic since react does not let you use the useEffect as a asyn function
     // so we just create it inside instead.
     async function fetchAssignments() {
@@ -48,7 +49,7 @@ export default function Home() {
     }
 
     // run the function we just created
-    fetchAssignments();
+   useEffect(() => { fetchAssignments();
   }, []);
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
@@ -81,9 +82,12 @@ export default function Home() {
               tasks.map((task) => (
                 <AssignmentCard // if it finds work/assignments get their info
                   key={task._id}
+                  id={task._id?.toString()|| task._id} // pass the id
                   title={task.title} 
                   dueDate={task.dueDate} 
+                  duration={task.duration || 0} // Pass the duration
                   priorityPercentage={task.priorityPercentage} 
+                  onUpdate={fetchAssignments} // Pass the refresh function
                 />
               ))
             ) : (
