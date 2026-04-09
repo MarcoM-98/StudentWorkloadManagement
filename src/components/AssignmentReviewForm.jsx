@@ -32,34 +32,37 @@ export default function AssignmentReviewForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-zinc-200">
-          Estimated Minutes
-        </label>
-        <input
-          type="number"
-          value={minutes}
-          onChange={(e) => setMinutes(e.target.value)}
-          className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium uppercase text-zinc-400">
+            Due Date
+          </label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-zinc-200">
-          Due Date
-        </label>
-        <input
-          type="text"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium uppercase text-zinc-400">
+            Duration (Min)
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-400 outline-none focus:border-blue-400"
+          />
+        </div>
       </div>
 
       <div className="flex gap-3">
         <button
           type="submit"
-          className="rounded-lg bg-green-600 px-5 py-3 text-white font-medium hover:bg-green-500"
+          className="rounded-lg bg-green-600 px-5 py-3 font-medium text-white hover:bg-green-500"
         >
           {editingId !== null ? "Save Changes" : "Confirm Details"}
         </button>
@@ -68,7 +71,7 @@ export default function AssignmentReviewForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg bg-zinc-700 px-5 py-3 text-white font-medium hover:bg-zinc-600"
+            className="rounded-lg bg-zinc-700 px-5 py-3 font-medium text-white hover:bg-zinc-600"
           >
             Cancel
           </button>
