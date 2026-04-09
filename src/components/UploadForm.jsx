@@ -4,6 +4,27 @@ import { useEffect, useRef, useState } from "react";
 import AssignmentReviewForm from "./AssignmentReviewForm";
 import SavedAssignmentsList from "./SavedAssignmentsList";
 
+function normalizeDateForInput(dateString) {
+  if (!dateString) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  const lowered = String(dateString).trim().toLowerCase();
+
+  if (lowered === "today") {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().split("T")[0];
+}
+
 export default function UploadForm() {
   const fileInputRef = useRef(null);
 
@@ -109,7 +130,9 @@ export default function UploadForm() {
       }
 
       const extractedMinutes = analyzeData.data?.minutes ?? 0;
-      const extractedDueDate = analyzeData.data?.due_date ?? "unknown";
+      const extractedDueDate = normalizeDateForInput(
+        analyzeData.data?.due_date ?? ""
+      );
 
       setAssignmentTitle(file.name);
       setMinutes(String(extractedMinutes));
@@ -132,7 +155,7 @@ export default function UploadForm() {
       id: editingId ?? Date.now(),
       title: assignmentTitle,
       minutes: Number(minutes),
-      dueDate,
+      dueDate: normalizeDateForInput(dueDate),
     };
 
     let updatedAssignments;
@@ -142,12 +165,12 @@ export default function UploadForm() {
         assignment.id === editingId ? reviewedAssignment : assignment
       );
       setMessage(
-        `Updated: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
+        `Updated: ${assignmentTitle} | ${minutes} minutes | Due: ${reviewedAssignment.dueDate || "No date"}`
       );
     } else {
       updatedAssignments = [...savedAssignments, reviewedAssignment];
       setMessage(
-        `Saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${dueDate}`
+        `Saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${reviewedAssignment.dueDate || "No date"}`
       );
     }
 
@@ -162,13 +185,20 @@ export default function UploadForm() {
     setFile(null);
   }
 
-  function handleEditAssignment(assignment) {
-    setAssignmentTitle(assignment.title);
-    setMinutes(String(assignment.minutes));
-    setDueDate(assignment.dueDate);
-    setEditingId(assignment.id);
-    setShowReview(true);
-    setMessage(`Editing: ${assignment.title}`);
+  function handleSaveEdit(id, updatedFields) {
+    const updatedAssignments = savedAssignments.map((assignment) =>
+      assignment.id === id
+        ? {
+            ...assignment,
+            ...updatedFields,
+            dueDate: normalizeDateForInput(updatedFields.dueDate),
+          }
+        : assignment
+    );
+
+    setSavedAssignments(updatedAssignments);
+    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+    setMessage("Assignment updated.");
   }
 
   function handleDeleteAssignment(id) {
@@ -262,7 +292,7 @@ export default function UploadForm() {
 
       <SavedAssignmentsList
         savedAssignments={savedAssignments}
-        onEdit={handleEditAssignment}
+        onSaveEdit={handleSaveEdit}
         onDelete={handleDeleteAssignment}
       />
     </div>
