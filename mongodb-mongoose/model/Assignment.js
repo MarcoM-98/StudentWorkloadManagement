@@ -38,6 +38,9 @@ const assignmentSchema = new Schema(
             required: true,
             enum: ['low', 'medium', 'IMMEDIATE'],
         },
+        duration: {
+             type: Number, 
+             default: 0 },
     },
     {
         timestamps: true, // creates createdAt and updatedAt automatically
