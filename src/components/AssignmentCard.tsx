@@ -12,7 +12,7 @@ type AssignmentProps = {
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, onUpdate }: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate }: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -116,7 +116,7 @@ if (isEditing) {
 
               {/*  custom input number */}
               <div className="w-28">
-                  <label className="text-[10px] uppercase text-zinc-500 ml-1">Override %</label>
+                  <label className="text-[10px] uppercase text-zinc-500 ml-1"> Custom %</label>
                   <input
                       type="number"
                       min="0"

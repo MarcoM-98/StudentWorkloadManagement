@@ -38,6 +38,12 @@ const assignmentSchema = new Schema(
             required: true,
             enum: ['low', 'medium', 'IMMEDIATE'],
         },
+        customPercentage: {
+        type: Number, 
+        default: null,
+        min: 0,
+        max: 100
+    },
         duration: {
              type: Number, 
              default: 0 },
