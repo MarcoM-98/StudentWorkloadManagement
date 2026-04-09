@@ -1,6 +1,12 @@
+"use client";
+
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div className="flex h-screen bg-zinc-50 dark:bg-zinc-900">
      {/* Sidebar */}
@@ -8,8 +14,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">GitYourWorkDone</h2>
         </div>
-        <nav className="px-4 mt-6">
-          <a href="#" className="block py-2 px-4 rounded bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-medium">Dashboard</a>
+        <nav className="px-4 mt-6 space-y-2">
+          <Link
+            href="/"
+            className={`sidebar-btn ${pathname === '/' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
+          >
+            <span>Dashboard</span>
+          </Link>
+
+          <Link
+            href="/assignments"
+            className={`sidebar-btn ${pathname === '/assignments' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
+          >
+            <span>Assignments</span>
+          </Link>
         </nav>
       </aside>
 
