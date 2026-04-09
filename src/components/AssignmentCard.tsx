@@ -27,7 +27,7 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
             if(!isEditing) // only autosave if user is actually editing
             return;
             
-        const delayDebounceFn = setTimeout(async () => { // Start a 1-second timer of inactivity before executingof inactivity before executing
+        const delayDebounceFn = setTimeout(async () => { // Start a 1-second timer of inactivity before executing
             setIsSaving(true); // show a "Saving..." indicator to the user
             try { // try block to sends an asynchronous network request to our route using the specific assignment ID
                 const response = await fetch(`/api/assignments/${id}`, {
