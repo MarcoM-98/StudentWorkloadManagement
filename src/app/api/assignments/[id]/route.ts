@@ -1,4 +1,4 @@
-import { nextResponse } from 'next/server'; // send data back to the browser
+import { NextResponse } from 'next/server'; // send data back to the browser
 import dbConnect from '@/mongodb-mongoose/dbConnect';
 import Assignment from '@/mongodb-mongoose/model/Assignment';
 
