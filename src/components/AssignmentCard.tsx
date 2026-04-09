@@ -1,8 +1,7 @@
 "use client";
-import {useState} from "react";
-
+import {useState, useEffect} from "react"; // added useEffect to synchronize saving with an external system (mongodb)
 type AssignmentProps = {
-    id: string;
+    id: string; // mongodb _id
     title: string;
     dueDate: string;
     duration: number;
@@ -13,6 +12,7 @@ type AssignmentProps = {
 
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, onUpdate }: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     
     // state initialization with fallbacks to prevent "uncontrolled" errors such as empty string or 0 on duration 
     // also react does not like when an input switches from an uncontrolled to a controlled value
@@ -22,6 +22,17 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
         dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
         duration: (duration ?? duration > 0) ? duration : 60
         });
+
+        useEffect(()=> {
+            if(!isEditing) // only autosave if user is actually editing
+            return;
+
+        }
+        )
+
+
+
+
         const handleSave = (e: React.MouseEvent) => {
             e.stopPropagation();
     //close the edit mode
