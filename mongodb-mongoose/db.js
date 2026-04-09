@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 export async function connectDB() {
     try {
         await mongoose.connect(
-            'mongodb+srv://REMOVED_CLUSTER_INFO'
+            'mongodb://localhost:27017/study_site'
         );
         console.log("MongoDB connected");
     } catch (err) {
