@@ -6,6 +6,8 @@ type AssignmentProps = {
     dueDate: string;
     duration: number;
     priorityPercentage: number;
+    priorityWord: string; // this will be the low, medium and immediate words
+    customPercentage?: number | null; // this may exist or not, if it does it allows the user to custom type a number
     onUpdate?: () => void; // this tells the page/dashboard that we have change something and to refresh the list
 
 };
@@ -21,6 +23,8 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
         title: title || "",
         dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
         duration: (duration ?? duration > 0) ? duration : 60
+        priority: priorityWord || "low"
+        customPercentage: customPercentage ?? null
         });
 
         useEffect(()=> {
@@ -37,6 +41,8 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
                         title: editData.title,
                         dueDate: editData.dueDate,
                         duration: Number(editData.duration)
+                        priority: editData.priority // this is the low, medium, immediate option which will be saved
+                        customPercentage: editData.customPercentage // this is where it will save the custom number
                     }),
                 });
         
