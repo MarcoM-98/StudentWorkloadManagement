@@ -41,7 +41,6 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
                 });
         
                 if (response.ok && onUpdate) {// If the server confirms the save and onUpdate will 
-                    onUpdate(); // trigger a refresh of the main dashboard to recalculate the Priority %
                 }
             } catch (error) {
                 console.error("Auto-save failed:", error); // If the network is down or the server crashes, log the error to the console for debugging
@@ -55,14 +54,17 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
         // this line kills the old timer and resets the clock.
         return () => clearTimeout(delayDebounceFn);
 
-    }, [editData, isEditing, id, onUpdate]); // Dependency Array: Tells React to re-run this entire block whenever any of these 4 values change
+    }, [editData, isEditing, id]); // Dependency Array: Tells React to re-run this entire block whenever any of these 4 values change
 
         const handleSave = (e: React.MouseEvent) => {
             e.stopPropagation();
     //close the edit mode
     setIsEditing(false);
-    // 2. Log the data to the console to show locally that it saved
-    console.log("Local Edit Captured (Not yet saved to DB):", editData);
+    if (onUpdate) {
+            onUpdate(); // Trigger the dashboard refresh when closing the card/assignment
+        }
+    // 2. Log the data to the console to show locally that it saved we can move this line or change this line
+    console.log("Local Edit Captured:", editData);
 
 };
 if (isEditing) {
