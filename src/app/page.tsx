@@ -10,6 +10,7 @@ type Task = {
   title: string;
   dueDate: string;
   priority: string;
+  customPercentage?: number | null; // ? optional it may exist or not, also user may override the percentage to a custom one
   id:number;
   duration:number;
 };
@@ -47,7 +48,11 @@ export default function Home() {
         setLoading(false);
       }
     }
-    const calculatePriority = (priorityWord: string) => {
+    const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
+    if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
+        return customNumber; 
+    } 
+    // if notusing custom then keep using this if they have those words set
       if (priorityWord === 'IMMEDIATE') return 100;
       if (priorityWord === 'medium') return 50;
       if (priorityWord === 'low') return 20;
@@ -92,7 +97,7 @@ export default function Home() {
                   title={task.title} 
                   dueDate={task.dueDate} 
                   duration={task.duration || 0} // Pass the duration
-                  priorityPercentage={task.priorityPercentage} 
+                  priorityPercentage={calculatePriority(task.priority, task.customPercentage)} 
                   onUpdate={fetchAssignments} // Pass the refresh function
                 />
               ))
