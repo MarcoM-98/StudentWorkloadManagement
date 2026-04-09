@@ -6,11 +6,13 @@ type AssignmentProps = {
     dueDate: string;
     duration: number;
     priorityPercentage: number;
+    priorityWord: string; // this will be the low, medium and immediate words
+    customPercentage?: number | null; // this may exist or not, if it does it allows the user to custom type a number
     onUpdate?: () => void; // this tells the page/dashboard that we have change something and to refresh the list
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, onUpdate }: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate }: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -20,7 +22,9 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
     const [editData, setEditData] = useState({
         title: title || "",
         dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
-        duration: (duration ?? duration > 0) ? duration : 60
+        duration: (duration ?? duration > 0) ? duration : 60,
+        priority: priorityWord || "low",
+        customPercentage: customPercentage ?? null
         });
 
         useEffect(()=> {
@@ -36,7 +40,9 @@ export default function AssignmentCard({ id, title, dueDate, duration, priorityP
                     body: JSON.stringify({ // Converts our JavaScript object into a string for transmission except duration, it will be sent as a number
                         title: editData.title,
                         dueDate: editData.dueDate,
-                        duration: Number(editData.duration)
+                        duration: Number(editData.duration),
+                        priority: editData.priority, // this is the low, medium, immediate option which will be saved
+                        customPercentage: editData.customPercentage // this is where it will save the custom number
                     }),
                 });
         
@@ -91,6 +97,43 @@ if (isEditing) {
                 onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
               />
             </div>
+            {/* The Priority Controls (Side-by-Side) */}
+            <div className="flex gap-4 col-span-2"> 
+              
+              {/* Priority dropdown menu */}
+              <div className="flex-1">
+                  <label className="text-[10px] uppercase text-zinc-500 ml-1">Base Priority</label>
+                  <select
+                      className="w-full p-2 rounded border dark:bg-zinc-800 dark:border-zinc-700 outline-none cursor-pointer"
+                      value={editData.priority}
+                      onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
+                  >
+                      <option value="low">Low (20%)</option>
+                      <option value="medium">Medium (50%)</option>
+                      <option value="IMMEDIATE">IMMEDIATE (100%)</option>
+                  </select>
+              </div>
+
+              {/*  custom input number */}
+              <div className="w-28">
+                  <label className="text-[10px] uppercase text-zinc-500 ml-1"> Custom %</label>
+                  <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="None"
+                      className="w-full p-2 rounded border dark:bg-zinc-800 dark:border-zinc-700 outline-none"
+                      // If it's null, show a blank box (""). Otherwise, show the number.
+                      value={editData.customPercentage ?? ""} 
+                      onChange={(e) => {
+                          const val = e.target.value;
+                          // If they delete the number, save it as null to use the base priority
+                          setEditData({ ...editData, customPercentage: val ? parseInt(val) : null });
+                      }}
+                  />
+              </div>
+
+            </div>
             <div>
             {/* banner and display bar for duration */ }
               <label className="text-[10px] uppercase text-zinc-500 ml-1">Duration (min)</label>
@@ -104,9 +147,18 @@ if (isEditing) {
           </div>
           <div className="flex justify-end gap-2 text-sm pt-1">
             <button 
-                onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} 
-                className="text-zinc-500 hover:text-zinc-700 px-2 py-1"
-            >
+                onClick={(e) => { e.stopPropagation();   // Reset the typing back to to what it was before
+                        setEditData({
+                            title: title || "",
+                            dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "",
+                            duration: (duration ?? duration > 0) ? duration : 60,
+                            priority: priorityWord || "low",
+                            customPercentage: customPercentage ?? null
+                        });
+                        setIsEditing(false); 
+                    }} 
+                    className="text-zinc-500 hover:text-zinc-700 px-2 py-1"
+                >
                 Cancel
             </button>
             <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition-colors">
@@ -125,8 +177,8 @@ if (isEditing) {
     onClick={() => setIsEditing(true)}
     >
       <div>
-        <h3 className="text-md font-bold">{editData.title}</h3>
-        <p className="text-sm text-zinc-500">Due: {editData.dueDate ? new Date(editData.dueDate).toLocaleDateString(): "No date"} • {editData.duration} mins </p>
+        <h3 className="text-md font-bold">{title}</h3>
+        <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
       </div>
       <div className="flex flex-col items-end">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
