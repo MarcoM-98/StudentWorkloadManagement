@@ -40,6 +40,19 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // ✅ NEW: animated dots
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length >= 3 ? "." : prev + "."));
+    }, 400);
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
   function handleSelectedFile(selectedFile) {
     if (!selectedFile) return;
     setFile(selectedFile);
@@ -164,14 +177,8 @@ export default function UploadForm() {
       updatedAssignments = savedAssignments.map((assignment) =>
         assignment.id === editingId ? reviewedAssignment : assignment
       );
-      setMessage(
-        `Updated: ${assignmentTitle} | ${minutes} minutes | Due: ${reviewedAssignment.dueDate || "No date"}`
-      );
     } else {
       updatedAssignments = [...savedAssignments, reviewedAssignment];
-      setMessage(
-        `Saved locally: ${assignmentTitle} | ${minutes} minutes | Due: ${reviewedAssignment.dueDate || "No date"}`
-      );
     }
 
     setSavedAssignments(updatedAssignments);
@@ -198,7 +205,6 @@ export default function UploadForm() {
 
     setSavedAssignments(updatedAssignments);
     localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
-    setMessage("Assignment updated.");
   }
 
   function handleDeleteAssignment(id) {
@@ -208,16 +214,6 @@ export default function UploadForm() {
 
     setSavedAssignments(updatedAssignments);
     localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
-
-    if (editingId === id) {
-      setAssignmentTitle("");
-      setMinutes("");
-      setDueDate("");
-      setShowReview(false);
-      setEditingId(null);
-    }
-
-    setMessage("Assignment deleted.");
   }
 
   function handleCancelEdit() {
@@ -226,11 +222,10 @@ export default function UploadForm() {
     setDueDate("");
     setShowReview(false);
     setEditingId(null);
-    setMessage("Edit cancelled.");
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           ref={fileInputRef}
@@ -251,7 +246,7 @@ export default function UploadForm() {
               : "border-zinc-600 bg-zinc-950 hover:border-zinc-400"
           }`}
         >
-          <p className="text-3xl mb-2">📄</p>
+          <p className="mb-2 text-3xl">📄</p>
           <p className="text-xl font-semibold text-white">
             Drag and drop a file here
           </p>
@@ -265,13 +260,27 @@ export default function UploadForm() {
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-blue-600 px-5 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
-        >
-          {loading ? "Uploading..." : "Upload"}
-        </button>
+        {/* ✅ BUTTON + SPINNER */}
+        <div className="flex items-center gap-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+          >
+            {loading ? `Uploading${dots}` : "Upload"}
+          </button>
+
+          {loading && (
+            <div className="spinner">
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          )}
+        </div>
       </form>
 
       {message && <p className="text-zinc-200">{message}</p>}
