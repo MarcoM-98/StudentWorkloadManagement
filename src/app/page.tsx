@@ -66,7 +66,7 @@ export default function Home() {
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <OverloadBanner /> // overload banner warning
+        <OverloadBanner /> {/* overload banner warning*/}
         
         <div className="mt-6">
           <div className="flex justify-between items-center mb-6">
@@ -98,12 +98,14 @@ export default function Home() {
                   dueDate={task.dueDate} 
                   duration={task.duration || 0} // Pass the duration
                   priorityPercentage={calculatePriority(task.priority, task.customPercentage)} 
+                  priorityWord={task.priority} 
+                  customPercentage={task.customPercentage}
                   onUpdate={fetchAssignments} // Pass the refresh function
                 />
               ))
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> // show caught up message if no work left
+                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> {/* show caught up message if no work left*/}
               </div>
             )}
           </div>
