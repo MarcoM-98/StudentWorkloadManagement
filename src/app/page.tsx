@@ -9,7 +9,7 @@ type Task = {
   _id: string;
   title: string;
   dueDate: string;
-  priorityPercentage: number;
+  priority: string;
   id:number;
   duration:number;
 };
@@ -47,6 +47,12 @@ export default function Home() {
         setLoading(false);
       }
     }
+    const calculatePriority = (priorityWord: string) => {
+      if (priorityWord === 'IMMEDIATE') return 100;
+      if (priorityWord === 'medium') return 50;
+      if (priorityWord === 'low') return 20;
+      return 0; // fallback just in case
+    };
 
     // run the function we just created
    useEffect(() => { fetchAssignments();
