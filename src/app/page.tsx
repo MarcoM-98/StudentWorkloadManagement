@@ -89,6 +89,12 @@ export default function Home() {
     
     console.log("Optimization calculated successfully!");
   };
+  useEffect(() => {
+  if (tasks.length > 0 && scheduleSuggestions.length === 0) { // If we have tasks but haven't calculated suggestions yet
+    console.log("Automatically running rescheduler logic...");
+    handleOptimizeSchedule(); // This triggers the math locally for now again, till uploadform is finally connected to mongodb
+  }
+}, [tasks, scheduleSuggestions]);
     // run the function we just created
    useEffect(() => { fetchAssignments();
   }, []);
