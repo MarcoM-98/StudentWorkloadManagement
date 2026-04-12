@@ -17,14 +17,14 @@ export function suggestNewSchedule(tasks: Task[], dailyMinutesMax: number) { // 
   const suggestions = []; // empty array that will store final(new) results/ date of the assignments
 
   for (const task of sortedTasks) {
-    if (minutesUsedToday + task.duration > dailyMinutesMax) { // If the daily time is full, move the pointer to the next day
+    if (minutesUsedToday + task.duration > dailyMinutesMax) { // check if adding this task/assignment goes over the daily time limit if so, move it to tomorrow and reset the timer.
       currentDay.setDate(currentDay.getDate() + 1);
       minutesUsedToday = 0;
     }
     suggestions.push({ // adds them to the end of our result list which is the array in line 17 
       _id: task._id, // identifies the assignment
       title: task.title,
-      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string.
+      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string. such as year, month, day
        
       isDelayed: new Date(currentDay) > new Date(task.dueDate)  // this helps the UI show a "Late" warning that we can implement ?
     });
