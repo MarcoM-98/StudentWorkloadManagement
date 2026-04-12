@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
+import { suggestNewSchedule } from "@/lib/rescheduler";
 
 // We define the shape of the data thats going to show
 type Task = {
@@ -119,7 +120,10 @@ export default function Home() {
                 <p className="text-zinc-500 animate-pulse text-lg">Loading your schedule please wait...</p>
               </div>
             ) : tasks.length > 0 ? (
-              tasks.map((task) => (
+
+              {tasks.map((task) => { // chang ( to { with a return( because it needs to know which suggestion belonged to which task before rendering the card.
+                const suggestion = scheduleSuggestions.find(s => s._id === (task._id?.toString() || task._id));
+                return(
                 <AssignmentCard // if it finds work/assignments get their info
                   key={task._id}
                   id={task._id?.toString()|| task._id} // pass the id
@@ -130,8 +134,10 @@ export default function Home() {
                   priorityWord={task.priority} 
                   customPercentage={task.customPercentage}
                   onUpdate={fetchAssignments} // Pass the refresh function
+                  suggestedDate={suggestion?.suggestedDate}
                 />
-              ))
+                );
+              })}
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
                 <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> {/* show caught up message if no work left*/}
