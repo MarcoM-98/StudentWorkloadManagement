@@ -66,6 +66,15 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
       });
+      if (response.ok) {
+        fetchAssignments(); // Refresh the list so the UI shows the updated official date
+        
+        setScheduleSuggestions(prev => prev.filter(s => s._id !== taskId));// Clear the suggestion for this specific task since it's now the "official" date/ new date
+      }
+    } catch (error) {
+      console.error("Failed to accept suggestion:", error);
+    }
+  };
 
     // run the function we just created
    useEffect(() => { fetchAssignments();
