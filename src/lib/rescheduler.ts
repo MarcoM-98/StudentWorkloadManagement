@@ -3,12 +3,12 @@ export type Task = {// Every task must have these, we can add anything else that
   title: string;
   duration: number;
   dueDate: string;
-  priorityScore: number; 
+  priorityPercentage: number; 
 };
 
 export function suggestNewSchedule(tasks: Task[], dailyMinutesMax: number) { // This uses the definition above to process the list.
   
-  const sortedTasks = [...tasks].sort((a, b) => b.priorityScore - a.priorityScore); // Sort by Priority Score so high-value work stays as early as possible ?
+  const sortedTasks = [...tasks].sort((a, b) => b.priorityPercentage - a.priorityPercentage); // Sort by Priority Score/percentage so high-value work stays as early as possible ?
 
   let currentDay = new Date();
   currentDay.setHours(0, 0, 0, 0); // Reset time to midnight for clean math
