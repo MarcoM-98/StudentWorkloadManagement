@@ -59,23 +59,35 @@ export default function Home() {
       return 0; // fallback just in case
     };
 
-    const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
-    try {
-      const response = await fetch(`/api/assignments/${taskId}`, { //send a PATCH request to API route/mongodb because we want to suggest a new date
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
-      });
-      if (response.ok) {
-        fetchAssignments(); // Refresh the list so the UI shows the updated official date
+   //  const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
+     // try {
+       // const response = await fetch(`/api/assignments/${taskId}`, { //send a PATCH request to API route/mongodb because we want to suggest a new date
+       //   method: 'PATCH',
+       //   headers: { 'Content-Type': 'application/json' },
+       //   body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
+     //   });
+     //   if (response.ok) {
+      //    fetchAssignments(); // Refresh the list so the UI shows the updated official date
         
-        setScheduleSuggestions(prev => prev.filter(s => s._id !== taskId));// Clear the suggestion for this specific task since it's now the "official" date/ new date
-      }
-    } catch (error) {
-      console.error("Failed to accept suggestion:", error);
-    }
-  };
+       //   setScheduleSuggestions(prev => prev.filter(s => s._id !== taskId));// Clear the suggestion for this specific task since it's now the "official" date/ new date
+     //   }
+    //  } catch (error) {
+    //    console.error("Failed to accept suggestion:", error);
+   //   }
+  //  };
 
+  const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]);//Logic to calculate and show suggestions locally while we wait for the uploadForm.jsx to connect to mongodb
+
+  const handleOptimizeSchedule = () => {
+    
+    const results = suggestNewSchedule(tasks, 120);//  Run the math/reschedule engine
+    
+    // save the results to the state to show them on screen
+    // We are NOT saving to the database yet till the uploadform file is fixed :(
+    setScheduleSuggestions(results);
+    
+    console.log("Optimization calculated successfully!");
+  };
     // run the function we just created
    useEffect(() => { fetchAssignments();
   }, []);
