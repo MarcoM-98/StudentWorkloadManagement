@@ -49,7 +49,7 @@ const now = new Date().getTime();
     suggestions.push({ // adds them to the end of our result list which is the array in line 17 
       _id: task._id, // identifies the assignment
       title: task.title,
-      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string.
+      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string. such as year, month, day
        
       isDelayed: new Date(currentDay) > new Date(task.dueDate)  // this helps the UI show a "Late" warning that we can implement ?
     });
