@@ -59,6 +59,14 @@ export default function Home() {
       return 0; // fallback just in case
     };
 
+    const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, { //send a PATCH request to API route/mongodb because we want to suggest a new date
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
+      });
+
     // run the function we just created
    useEffect(() => { fetchAssignments();
   }, []);
