@@ -348,7 +348,6 @@ export default function UploadForm() {
           )}
         </div>
 
-        {/* BUTTON + SPINNER */}
         <div className="flex items-center gap-4">
           <button
             type="submit"
@@ -376,7 +375,8 @@ export default function UploadForm() {
           className={`rounded-lg border px-4 py-3 text-sm ${
             message.toLowerCase().includes("failed") ||
             message.toLowerCase().includes("wrong") ||
-            message.toLowerCase().includes("invalid")
+            message.toLowerCase().includes("invalid") ||
+            message.toLowerCase().includes("could not")
               ? "border-red-500 bg-red-500/10 text-red-300"
               : "border-zinc-700 bg-zinc-900 text-zinc-200"
           }`}
