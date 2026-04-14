@@ -18,6 +18,8 @@ export async function GET(request) {
   } catch (error) {
     console.error("MongoDB Fetch Error:", error);
     return NextResponse.json({ error: "Failed to fetch from DB" }, { status: 500 });
+  }
+}
 export async function POST(req) {
   try {
     await connectDB();
