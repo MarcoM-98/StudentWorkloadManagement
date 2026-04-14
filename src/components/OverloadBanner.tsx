@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 type SavedAssignment = {
-  id: number;
+  _id: string;
   title: string;
-  minutes: number;
+  duration: number;
   dueDate: string;
 };
 
@@ -24,41 +24,50 @@ export default function OverloadBanner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("savedAssignments");
-      const parsed: SavedAssignment[] = stored ? JSON.parse(stored) : [];
+    async function loadOverloadData() {
+      try {
+        const response = await fetch("/api/assignments");
 
-      const requiredMinutes = parsed.reduce(
-        (total, assignment) => total + Number(assignment.minutes || 0),
-        0
-      );
+        if (!response.ok) {
+          throw new Error("Failed to fetch assignments");
+        }
 
-     
-      const availableHours = 5;
-      const requiredHours = requiredMinutes / 60;
-      const overloadHours = Math.max(0, requiredHours - availableHours);
+        const parsed: SavedAssignment[] = await response.json();
 
-      const dueDates = parsed
-        .map((assignment) => assignment.dueDate)
-        .filter(Boolean);
+        const requiredMinutes = parsed.reduce(
+          (total, assignment) => total + Number(assignment.duration || 0),
+          0
+        );
 
-      const windowStart = dueDates.length > 0 ? dueDates[0] : "unknown";
-      const windowEnd =
-        dueDates.length > 0 ? dueDates[dueDates.length - 1] : "unknown";
+        const availableHours = 5;
+        const requiredHours = requiredMinutes / 60;
+        const overloadHours = Math.max(0, requiredHours - availableHours);
 
-      setData({
-        requiredHours,
-        availableHours,
-        overloadHours,
-        isOverloaded: requiredHours > availableHours,
-        windowStart,
-        windowEnd,
-      });
-    } catch (err) {
-      setError("Could not load workload status");
-    } finally {
-      setLoading(false);
+        const dueDates = parsed
+          .map((assignment) => assignment.dueDate)
+          .filter(Boolean)
+          .sort();
+
+        const windowStart = dueDates.length > 0 ? dueDates[0] : "unknown";
+        const windowEnd =
+          dueDates.length > 0 ? dueDates[dueDates.length - 1] : "unknown";
+
+        setData({
+          requiredHours,
+          availableHours,
+          overloadHours,
+          isOverloaded: requiredHours > availableHours,
+          windowStart,
+          windowEnd,
+        });
+      } catch (err) {
+        setError("Could not load workload status");
+      } finally {
+        setLoading(false);
+      }
     }
+
+    loadOverloadData();
   }, []);
 
   if (loading) return null;
