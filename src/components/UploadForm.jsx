@@ -49,6 +49,7 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
@@ -202,18 +203,12 @@ export default function UploadForm() {
       priorityPercentage: 0,
     };
 
-    try {
-      if (editingId !== null) {
-        const updatedAssignments = savedAssignments.map((assignment) =>
-          assignment.id === editingId
-            ? {
-                ...assignment,
-                title: assignmentTitle,
-                minutes: Number(minutes),
-                dueDate: normalizeDateForInput(dueDate),
-              }
-            : assignment
-        );
+    const updatedAssignments =
+      editingId !== null
+        ? savedAssignments.map((assignment) =>
+            assignment.id === editingId ? reviewedAssignment : assignment
+          )
+        : [...savedAssignments, reviewedAssignment];
 
         setSavedAssignments(updatedAssignments);
       } else {
@@ -353,6 +348,7 @@ export default function UploadForm() {
           )}
         </div>
 
+        {/* BUTTON + SPINNER */}
         <div className="flex items-center gap-4">
           <button
             type="submit"
@@ -364,8 +360,12 @@ export default function UploadForm() {
 
           {loading && (
             <div className="spinner">
-              <div></div><div></div><div></div>
-              <div></div><div></div><div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
             </div>
           )}
         </div>
@@ -376,8 +376,7 @@ export default function UploadForm() {
           className={`rounded-lg border px-4 py-3 text-sm ${
             message.toLowerCase().includes("failed") ||
             message.toLowerCase().includes("wrong") ||
-            message.toLowerCase().includes("invalid") ||
-            message.toLowerCase().includes("could not")
+            message.toLowerCase().includes("invalid")
               ? "border-red-500 bg-red-500/10 text-red-300"
               : "border-zinc-700 bg-zinc-900 text-zinc-200"
           }`}
