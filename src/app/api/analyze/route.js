@@ -128,6 +128,7 @@ Assignment:${content}`,
         { error: "Analysis returned invalid data." },
         { status: 500 }
       );
+      };
     }
 
     parsed = {
