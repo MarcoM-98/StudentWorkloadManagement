@@ -215,18 +215,18 @@ async function handleReviewSubmit(e) {
   };
 >>>>>>> baea7f2 (SCRUM-78: save uploaded assignments to database)
 
-  try {
-    if (editingId !== null) {
-      const updatedAssignments = savedAssignments.map((assignment) =>
-        assignment.id === editingId
-          ? {
-              ...assignment,
-              title: assignmentTitle,
-              minutes: Number(minutes),
-              dueDate: normalizeDateForInput(dueDate),
-            }
-          : assignment
-      );
+    try {
+      if (editingId !== null) {
+        const updatedAssignments = savedAssignments.map((assignment) =>
+          assignment.id === editingId
+            ? {
+                ...assignment,
+                title: assignmentTitle,
+                minutes: Number(minutes),
+                dueDate: normalizeDateForInput(dueDate),
+              }
+            : assignment
+        );
 
 <<<<<<< HEAD
         setSavedAssignments(updatedAssignments);
@@ -272,14 +272,26 @@ async function handleReviewSubmit(e) {
         body: JSON.stringify(reviewedAssignment),
       });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setMessage(data.error || "Failed to save assignment.");
-        return;
+        if (!response.ok) {
+          setMessage(data.error || "Failed to save assignment.");
+          return;
+        }
+
+        setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
       }
 
-      setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
+      setAssignmentTitle("");
+      setMinutes("");
+      setDueDate("");
+      setShowReview(false);
+      setEditingId(null);
+      setFile(null);
+      setMessage("");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to save assignment.");
     }
 
     setAssignmentTitle("");
@@ -294,7 +306,6 @@ async function handleReviewSubmit(e) {
     setMessage("Failed to save assignment.");
 >>>>>>> baea7f2 (SCRUM-78: save uploaded assignments to database)
   }
-}
 
   async function handleSaveEdit(id, updatedFields) {
     try {
