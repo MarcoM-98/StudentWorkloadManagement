@@ -18,6 +18,27 @@ export async function GET(request) {
   } catch (error) {
     console.error("MongoDB Fetch Error:", error);
     return NextResponse.json({ error: "Failed to fetch from DB" }, { status: 500 });
+export async function POST(req) {
+  try {
+    await connectDB();
+
+    const body = await req.json();
+
+    const newAssignment = await Assignment.create({
+      title: body.title || "Untitled Assignment",
+      duration: Number(body.duration) || 0,
+      dueDate: body.dueDate || "",
+      priorityPercentage: Number(body.priorityPercentage) || 0,
+    });
+
+    return NextResponse.json(newAssignment, { status: 201 });
+  } catch (error) {
+    console.error("MongoDB Create Error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to create assignment" },
+      { status: 500 }
+    );
   }
 }
 
