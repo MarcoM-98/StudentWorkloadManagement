@@ -40,11 +40,14 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ NEW: animated dots
+  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
-    if (!loading) return;
+    if (!loading) {
+      setDots("");
+      return;
+    }
 
     const interval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? "." : prev + "."));
@@ -118,7 +121,6 @@ export default function UploadForm() {
 
       if (!uploadRes.ok) {
         setMessage(uploadData.error || "Upload failed.");
-        setLoading(false);
         return;
       }
 
@@ -163,8 +165,6 @@ export default function UploadForm() {
     } finally {
       setLoading(false);
     }
-
-    setLoading(false);
   }
 
   function handleReviewSubmit(e) {
@@ -183,9 +183,6 @@ export default function UploadForm() {
             assignment.id === editingId ? reviewedAssignment : assignment
           )
         : [...savedAssignments, reviewedAssignment];
-    } else {
-      updatedAssignments = [...savedAssignments, reviewedAssignment];
-    }
 
     setSavedAssignments(updatedAssignments);
     localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
@@ -267,7 +264,7 @@ export default function UploadForm() {
           )}
         </div>
 
-        {/* ✅ BUTTON + SPINNER */}
+        {/* BUTTON + SPINNER */}
         <div className="flex items-center gap-4">
           <button
             type="submit"
@@ -279,14 +276,30 @@ export default function UploadForm() {
 
           {loading && (
             <div className="spinner">
-              <div></div><div></div><div></div>
-              <div></div><div></div><div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
             </div>
           )}
         </div>
       </form>
 
-      {message && <p className="text-zinc-200">{message}</p>}
+      {message && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            message.toLowerCase().includes("failed") ||
+            message.toLowerCase().includes("wrong") ||
+            message.toLowerCase().includes("invalid")
+              ? "border-red-500 bg-red-500/10 text-red-300"
+              : "border-zinc-700 bg-zinc-900 text-zinc-200"
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
       {showReview && (
         <AssignmentReviewForm

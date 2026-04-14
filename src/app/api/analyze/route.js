@@ -36,7 +36,7 @@ function normalizeDueDate(dateString) {
 
 export async function POST(req) {
   try {
-    const { filename } = await req.json();    // Expected format: { "filename": "somefile.txt" }
+    const { filename } = await req.json(); // Expected format: { "filename": "somefile.txt" }
 
     if (!filename) {
       return NextResponse.json(
@@ -128,7 +128,6 @@ Assignment:${content}`,
         { error: "Analysis returned invalid data." },
         { status: 500 }
       );
-      };
     }
 
     parsed = {
@@ -141,7 +140,6 @@ Assignment:${content}`,
       success: true,
       data: parsed,
     });
-
   } catch (err) {
     console.error(err);
 
