@@ -55,9 +55,25 @@ export async function POST(req) {
       );
     }
 
-    const content = fs.readFileSync(filePath, "utf-8"); //will NOT properly parse PDFs, images, or Word docs, only txt 
+    const lowerName = filename.toLowerCase();
 
-    const response = await openai.chat.completions.create({ //sent to openai
+    if (!lowerName.endsWith(".txt")) {
+      return NextResponse.json(
+        { error: "Only TXT files are currently supported for analysis." },
+        { status: 400 }
+      );
+    }
+
+    const content = fs.readFileSync(filePath, "utf-8");
+
+    if (!content.trim()) {
+      return NextResponse.json(
+        { error: "The uploaded file is empty or unreadable." },
+        { status: 400 }
+      );
+    }
+
+    const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -102,15 +118,16 @@ Assignment:${content}`,
 
     // Safely parse JSON
     let parsed;
+
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
       console.error("JSON parse failed:", cleaned);
 
-      // Fallback in case AI messes up
-      parsed = {
-        minutes: 0,
-        due_date: "",
+      return NextResponse.json(
+        { error: "Analysis returned invalid data." },
+        { status: 500 }
+      );
       };
     }
 
