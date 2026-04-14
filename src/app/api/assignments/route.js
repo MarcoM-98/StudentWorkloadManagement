@@ -20,26 +20,37 @@ export async function GET(request) {
     return NextResponse.json({ error: "Failed to fetch from DB" }, { status: 500 });
   }
 }
+
 export async function POST(req) {
   try {
     await connectDB();
 
     const body = await req.json();
 
+    // Find the current highest numeric assignment id for this placeholder user
+    const lastAssignment = await Assignment.findOne({ userId: "local-user" })
+      .sort({ id: -1 })
+      .lean();
+
+    const nextId = lastAssignment ? lastAssignment.id + 1 : 1;
+
     const newAssignment = await Assignment.create({
+      id: nextId,
+      userId: "local-user",
       title: body.title || "Untitled Assignment",
-      duration: Number(body.duration) || 0,
+      description: "",
       dueDate: body.dueDate || "",
-      priorityPercentage: Number(body.priorityPercentage) || 0,
+      course: "General",
+      completed: false,
+      priority: "medium",
+      customPercentage: null,
+      duration: Number(body.duration) || 0,
     });
 
     return NextResponse.json(newAssignment, { status: 201 });
+
   } catch (error) {
     console.error("MongoDB Create Error:", error);
-
-    return NextResponse.json(
-      { error: "Failed to create assignment" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create assignment" }, { status: 500 });
   }
 }
