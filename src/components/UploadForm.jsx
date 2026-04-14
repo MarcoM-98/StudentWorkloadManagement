@@ -264,7 +264,7 @@ export default function UploadForm() {
         }),
       });
 
-      const data = await response.json();
+        const data = await response.json();
 
       if (!response.ok) {
         setMessage(data.error || "Failed to update assignment.");
