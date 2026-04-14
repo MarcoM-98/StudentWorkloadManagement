@@ -233,7 +233,7 @@ export default function UploadForm() {
           return;
         }
 
-        setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
+        await fetchSavedAssignments();
       }
 
       setAssignmentTitle("");
@@ -270,11 +270,7 @@ export default function UploadForm() {
         return;
       }
 
-      const updatedAssignments = savedAssignments.map((assignment) =>
-        assignment.id === id ? mapAssignmentFromDb(data) : assignment
-      );
-
-      setSavedAssignments(updatedAssignments);
+      await fetchSavedAssignments();
       setMessage("Assignment updated.");
     } catch (error) {
       console.error(error);
@@ -295,11 +291,7 @@ export default function UploadForm() {
         return;
       }
 
-      const updatedAssignments = savedAssignments.filter(
-        (assignment) => assignment.id !== id
-      );
-
-      setSavedAssignments(updatedAssignments);
+      await fetchSavedAssignments();
       setMessage("Assignment deleted.");
     } catch (error) {
       console.error(error);
