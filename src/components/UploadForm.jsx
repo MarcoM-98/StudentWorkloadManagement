@@ -121,6 +121,7 @@ export default function UploadForm() {
 
       if (!uploadRes.ok) {
         setMessage(uploadData.error || "Upload failed.");
+        setLoading(false);
         return;
       }
 
@@ -183,6 +184,9 @@ export default function UploadForm() {
             assignment.id === editingId ? reviewedAssignment : assignment
           )
         : [...savedAssignments, reviewedAssignment];
+    } else {
+      updatedAssignments = [...savedAssignments, reviewedAssignment];
+    }
 
     setSavedAssignments(updatedAssignments);
     localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
@@ -276,12 +280,8 @@ export default function UploadForm() {
 
           {loading && (
             <div className="spinner">
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
             </div>
           )}
         </div>
