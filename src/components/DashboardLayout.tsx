@@ -28,6 +28,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <span>Assignments</span>
           </Link>
+
+          <Link
+            href="/gmail"
+            className={`sidebar-btn ${pathname === '/gmail' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
+          >
+            <span>Gmail Login</span>
+          </Link>
+
+          <Link
+            href="/canvas"
+            className={`sidebar-btn ${pathname === '/canvas' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
+          >
+            <span>Canvas Login</span>
+          </Link>
         </nav>
       </aside>
 
