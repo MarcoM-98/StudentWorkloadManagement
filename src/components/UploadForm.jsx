@@ -249,18 +249,37 @@ export default function UploadForm() {
     }
   }
 
-  function handleSaveEdit(id, updatedFields) {
-    const updatedAssignments = savedAssignments.map((assignment) =>
-      assignment.id === id
-        ? {
-            ...assignment,
-            ...updatedFields,
-            dueDate: normalizeDateForInput(updatedFields.dueDate),
-          }
-        : assignment
-    );
+  async function handleSaveEdit(id, updatedFields) {
+    try {
+      const response = await fetch(`/api/assignments/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: updatedFields.title,
+          duration: Number(updatedFields.minutes),
+          dueDate: normalizeDateForInput(updatedFields.dueDate),
+        }),
+      });
 
-    setSavedAssignments(updatedAssignments);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to update assignment.");
+        return;
+      }
+
+      const updatedAssignments = savedAssignments.map((assignment) =>
+        assignment.id === id ? mapAssignmentFromDb(data) : assignment
+      );
+
+      setSavedAssignments(updatedAssignments);
+      setMessage("Assignment updated.");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to update assignment.");
+    }
   }
 
   async function handleDeleteAssignment(id) {
