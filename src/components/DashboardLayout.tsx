@@ -30,10 +30,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
 
           <Link
-            href="/gmail"
-            className={`sidebar-btn ${pathname === '/gmail' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
+            href="/firebase"
+            className={`sidebar-btn ${pathname === '/firebase' ? 'sidebar-btn-active' : 'sidebar-btn-inactive'}`}
           >
-            <span>Gmail Login</span>
+            <span>Firebase Login</span>
           </Link>
 
           <Link
