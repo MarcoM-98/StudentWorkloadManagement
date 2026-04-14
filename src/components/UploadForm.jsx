@@ -193,6 +193,7 @@ export default function UploadForm() {
     }
   }
 
+<<<<<<< HEAD
   async function handleReviewSubmit(e) {
     e.preventDefault();
 
@@ -202,14 +203,32 @@ export default function UploadForm() {
       dueDate: normalizeDateForInput(dueDate),
       priorityPercentage: 0,
     };
+=======
+async function handleReviewSubmit(e) {
+  e.preventDefault();
 
-    const updatedAssignments =
-      editingId !== null
-        ? savedAssignments.map((assignment) =>
-            assignment.id === editingId ? reviewedAssignment : assignment
-          )
-        : [...savedAssignments, reviewedAssignment];
+  const reviewedAssignment = {
+    title: assignmentTitle,
+    duration: Number(minutes),
+    dueDate: normalizeDateForInput(dueDate),
+    priorityPercentage: 0,
+  };
+>>>>>>> baea7f2 (SCRUM-78: save uploaded assignments to database)
 
+  try {
+    if (editingId !== null) {
+      const updatedAssignments = savedAssignments.map((assignment) =>
+        assignment.id === editingId
+          ? {
+              ...assignment,
+              title: assignmentTitle,
+              minutes: Number(minutes),
+              dueDate: normalizeDateForInput(dueDate),
+            }
+          : assignment
+      );
+
+<<<<<<< HEAD
         setSavedAssignments(updatedAssignments);
       } else {
         const response = await fetch("/api/assignments", {
@@ -242,7 +261,40 @@ export default function UploadForm() {
       console.error(error);
       setMessage("Failed to save assignment.");
     }
+=======
+      setSavedAssignments(updatedAssignments);
+    } else {
+      const response = await fetch("/api/assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reviewedAssignment),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to save assignment.");
+        return;
+      }
+
+      setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
+    }
+
+    setAssignmentTitle("");
+    setMinutes("");
+    setDueDate("");
+    setShowReview(false);
+    setEditingId(null);
+    setFile(null);
+    setMessage("");
+  } catch (error) {
+    console.error(error);
+    setMessage("Failed to save assignment.");
+>>>>>>> baea7f2 (SCRUM-78: save uploaded assignments to database)
   }
+}
 
   async function handleSaveEdit(id, updatedFields) {
     try {
