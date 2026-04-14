@@ -325,7 +325,7 @@ export default function UploadForm() {
           type="file"
           onChange={handleFileChange}
           className="hidden"
-          accept=".txt,.pdf,.docx"
+          accept=".txt"
         />
 
         <div
@@ -364,12 +364,8 @@ export default function UploadForm() {
 
           {loading && (
             <div className="spinner">
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
             </div>
           )}
         </div>
