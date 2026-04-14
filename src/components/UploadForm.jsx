@@ -193,61 +193,61 @@ export default function UploadForm() {
     }
   }
 
-async function handleReviewSubmit(e) {
-  e.preventDefault();
+  async function handleReviewSubmit(e) {
+    e.preventDefault();
 
-  const reviewedAssignment = {
-    title: assignmentTitle,
-    duration: Number(minutes),
-    dueDate: normalizeDateForInput(dueDate),
-    priorityPercentage: 0,
-  };
+    const reviewedAssignment = {
+      title: assignmentTitle,
+      duration: Number(minutes),
+      dueDate: normalizeDateForInput(dueDate),
+      priorityPercentage: 0,
+    };
 
-  try {
-    if (editingId !== null) {
-      const updatedAssignments = savedAssignments.map((assignment) =>
-        assignment.id === editingId
-          ? {
-              ...assignment,
-              title: assignmentTitle,
-              minutes: Number(minutes),
-              dueDate: normalizeDateForInput(dueDate),
-            }
-          : assignment
-      );
+    try {
+      if (editingId !== null) {
+        const updatedAssignments = savedAssignments.map((assignment) =>
+          assignment.id === editingId
+            ? {
+                ...assignment,
+                title: assignmentTitle,
+                minutes: Number(minutes),
+                dueDate: normalizeDateForInput(dueDate),
+              }
+            : assignment
+        );
 
-      setSavedAssignments(updatedAssignments);
-    } else {
-      const response = await fetch("/api/assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(reviewedAssignment),
-      });
+        setSavedAssignments(updatedAssignments);
+      } else {
+        const response = await fetch("/api/assignments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reviewedAssignment),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setMessage(data.error || "Failed to save assignment.");
-        return;
+        if (!response.ok) {
+          setMessage(data.error || "Failed to save assignment.");
+          return;
+        }
+
+        setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
       }
 
-      setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
+      setAssignmentTitle("");
+      setMinutes("");
+      setDueDate("");
+      setShowReview(false);
+      setEditingId(null);
+      setFile(null);
+      setMessage("");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to save assignment.");
     }
-
-    setAssignmentTitle("");
-    setMinutes("");
-    setDueDate("");
-    setShowReview(false);
-    setEditingId(null);
-    setFile(null);
-    setMessage("");
-  } catch (error) {
-    console.error(error);
-    setMessage("Failed to save assignment.");
   }
-}
 
   function handleSaveEdit(id, updatedFields) {
     const updatedAssignments = savedAssignments.map((assignment) =>
@@ -263,12 +263,29 @@ async function handleReviewSubmit(e) {
     setSavedAssignments(updatedAssignments);
   }
 
-  function handleDeleteAssignment(id) {
-    const updatedAssignments = savedAssignments.filter(
-      (assignment) => assignment.id !== id
-    );
+  async function handleDeleteAssignment(id) {
+    try {
+      const response = await fetch(`/api/assignments/${id}`, {
+        method: "DELETE",
+      });
 
-    setSavedAssignments(updatedAssignments);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to delete assignment.");
+        return;
+      }
+
+      const updatedAssignments = savedAssignments.filter(
+        (assignment) => assignment.id !== id
+      );
+
+      setSavedAssignments(updatedAssignments);
+      setMessage("Assignment deleted.");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to delete assignment.");
+    }
   }
 
   function handleCancelEdit() {
