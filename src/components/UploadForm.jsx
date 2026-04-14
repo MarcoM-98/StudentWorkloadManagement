@@ -117,7 +117,7 @@ export default function UploadForm() {
       const uploadData = await uploadRes.json();
 
       if (!uploadRes.ok) {
-        setMessage(uploadData.error || "Upload failed");
+        setMessage(uploadData.error || "Upload failed.");
         setLoading(false);
         return;
       }
@@ -137,14 +137,18 @@ export default function UploadForm() {
       const analyzeData = await analyzeRes.json();
 
       if (!analyzeRes.ok) {
-        setMessage(analyzeData.error || "Analysis failed");
-        setLoading(false);
+        setMessage(analyzeData.error || "Analysis failed.");
         return;
       }
 
-      const extractedMinutes = analyzeData.data?.minutes ?? 0;
+      if (!analyzeData.success || !analyzeData.data) {
+        setMessage("Analysis returned invalid data.");
+        return;
+      }
+
+      const extractedMinutes = analyzeData.data.minutes ?? 0;
       const extractedDueDate = normalizeDateForInput(
-        analyzeData.data?.due_date ?? ""
+        analyzeData.data.due_date ?? ""
       );
 
       setAssignmentTitle(file.name);
@@ -155,7 +159,9 @@ export default function UploadForm() {
       setMessage("Review and edit the extracted assignment details below.");
     } catch (err) {
       console.error(err);
-      setMessage("Something went wrong");
+      setMessage("Something went wrong while processing the file.");
+    } finally {
+      setLoading(false);
     }
 
     setLoading(false);
@@ -171,12 +177,12 @@ export default function UploadForm() {
       dueDate: normalizeDateForInput(dueDate),
     };
 
-    let updatedAssignments;
-
-    if (editingId !== null) {
-      updatedAssignments = savedAssignments.map((assignment) =>
-        assignment.id === editingId ? reviewedAssignment : assignment
-      );
+    const updatedAssignments =
+      editingId !== null
+        ? savedAssignments.map((assignment) =>
+            assignment.id === editingId ? reviewedAssignment : assignment
+          )
+        : [...savedAssignments, reviewedAssignment];
     } else {
       updatedAssignments = [...savedAssignments, reviewedAssignment];
     }
@@ -190,6 +196,7 @@ export default function UploadForm() {
     setShowReview(false);
     setEditingId(null);
     setFile(null);
+    setMessage("");
   }
 
   function handleSaveEdit(id, updatedFields) {
@@ -232,7 +239,7 @@ export default function UploadForm() {
           type="file"
           onChange={handleFileChange}
           className="hidden"
-          accept=".txt,.pdf,.docx"
+          accept=".txt"
         />
 
         <div
@@ -248,7 +255,7 @@ export default function UploadForm() {
         >
           <p className="mb-2 text-3xl">📄</p>
           <p className="text-xl font-semibold text-white">
-            Drag and drop a file here
+            Drag and drop a TXT file here
           </p>
           <p className="text-sm text-zinc-400">or click to choose a file</p>
 
@@ -272,12 +279,8 @@ export default function UploadForm() {
 
           {loading && (
             <div className="spinner">
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
             </div>
           )}
         </div>
