@@ -248,6 +248,7 @@ export default function UploadForm() {
       setMessage("Failed to save assignment.");
     }
   }
+}
 
   async function handleSaveEdit(id, updatedFields) {
     try {
