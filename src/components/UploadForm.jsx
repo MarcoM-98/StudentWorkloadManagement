@@ -193,24 +193,48 @@ export default function UploadForm() {
     }
   }
 
-  function handleReviewSubmit(e) {
-    e.preventDefault();
+async function handleReviewSubmit(e) {
+  e.preventDefault();
 
-    const reviewedAssignment = {
-      id: editingId ?? Date.now(),
-      title: assignmentTitle,
-      minutes: Number(minutes),
-      dueDate: normalizeDateForInput(dueDate),
-    };
+  const reviewedAssignment = {
+    title: assignmentTitle,
+    duration: Number(minutes),
+    dueDate: normalizeDateForInput(dueDate),
+    priorityPercentage: 0,
+  };
 
-    const updatedAssignments =
-      editingId !== null
-        ? savedAssignments.map((assignment) =>
-            assignment.id === editingId ? reviewedAssignment : assignment
-          )
-        : [...savedAssignments, reviewedAssignment];
+  try {
+    if (editingId !== null) {
+      const updatedAssignments = savedAssignments.map((assignment) =>
+        assignment.id === editingId
+          ? {
+              ...assignment,
+              title: assignmentTitle,
+              minutes: Number(minutes),
+              dueDate: normalizeDateForInput(dueDate),
+            }
+          : assignment
+      );
 
-    setSavedAssignments(updatedAssignments);
+      setSavedAssignments(updatedAssignments);
+    } else {
+      const response = await fetch("/api/assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reviewedAssignment),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to save assignment.");
+        return;
+      }
+
+      setSavedAssignments((prev) => [...prev, mapAssignmentFromDb(data)]);
+    }
 
     setAssignmentTitle("");
     setMinutes("");
@@ -219,7 +243,11 @@ export default function UploadForm() {
     setEditingId(null);
     setFile(null);
     setMessage("");
+  } catch (error) {
+    console.error(error);
+    setMessage("Failed to save assignment.");
   }
+}
 
   function handleSaveEdit(id, updatedFields) {
     const updatedAssignments = savedAssignments.map((assignment) =>
