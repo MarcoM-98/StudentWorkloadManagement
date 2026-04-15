@@ -40,11 +40,14 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ NEW: animated dots
+  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
-    if (!loading) return;
+    if (!loading) {
+      setDots("");
+      return;
+    }
 
     const interval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? "." : prev + "."));
@@ -117,8 +120,7 @@ export default function UploadForm() {
       const uploadData = await uploadRes.json();
 
       if (!uploadRes.ok) {
-        setMessage(uploadData.error || "Upload failed");
-        setLoading(false);
+        setMessage(uploadData.error || "Upload failed.");
         return;
       }
 
@@ -137,14 +139,18 @@ export default function UploadForm() {
       const analyzeData = await analyzeRes.json();
 
       if (!analyzeRes.ok) {
-        setMessage(analyzeData.error || "Analysis failed");
-        setLoading(false);
+        setMessage(analyzeData.error || "Analysis failed.");
         return;
       }
 
-      const extractedMinutes = analyzeData.data?.minutes ?? 0;
+      if (!analyzeData.success || !analyzeData.data) {
+        setMessage("Analysis returned invalid data.");
+        return;
+      }
+
+      const extractedMinutes = analyzeData.data.minutes ?? 0;
       const extractedDueDate = normalizeDateForInput(
-        analyzeData.data?.due_date ?? ""
+        analyzeData.data.due_date ?? ""
       );
 
       setAssignmentTitle(file.name);
@@ -155,10 +161,10 @@ export default function UploadForm() {
       setMessage("Review and edit the extracted assignment details below.");
     } catch (err) {
       console.error(err);
-      setMessage("Something went wrong");
+      setMessage("Something went wrong while processing the file.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   function handleReviewSubmit(e) {
@@ -171,15 +177,12 @@ export default function UploadForm() {
       dueDate: normalizeDateForInput(dueDate),
     };
 
-    let updatedAssignments;
-
-    if (editingId !== null) {
-      updatedAssignments = savedAssignments.map((assignment) =>
-        assignment.id === editingId ? reviewedAssignment : assignment
-      );
-    } else {
-      updatedAssignments = [...savedAssignments, reviewedAssignment];
-    }
+    const updatedAssignments =
+      editingId !== null
+        ? savedAssignments.map((assignment) =>
+            assignment.id === editingId ? reviewedAssignment : assignment
+          )
+        : [...savedAssignments, reviewedAssignment];
 
     setSavedAssignments(updatedAssignments);
     localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
@@ -190,6 +193,7 @@ export default function UploadForm() {
     setShowReview(false);
     setEditingId(null);
     setFile(null);
+    setMessage("");
   }
 
   function handleSaveEdit(id, updatedFields) {
@@ -232,7 +236,7 @@ export default function UploadForm() {
           type="file"
           onChange={handleFileChange}
           className="hidden"
-          accept=".txt,.pdf,.docx"
+          accept=".txt"
         />
 
         <div
@@ -248,7 +252,7 @@ export default function UploadForm() {
         >
           <p className="mb-2 text-3xl">📄</p>
           <p className="text-xl font-semibold text-white">
-            Drag and drop a file here
+            Drag and drop a TXT file here
           </p>
           <p className="text-sm text-zinc-400">or click to choose a file</p>
 
@@ -260,7 +264,7 @@ export default function UploadForm() {
           )}
         </div>
 
-        {/* ✅ BUTTON + SPINNER */}
+        {/* BUTTON + SPINNER */}
         <div className="flex items-center gap-4">
           <button
             type="submit"
@@ -283,7 +287,19 @@ export default function UploadForm() {
         </div>
       </form>
 
-      {message && <p className="text-zinc-200">{message}</p>}
+      {message && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            message.toLowerCase().includes("failed") ||
+            message.toLowerCase().includes("wrong") ||
+            message.toLowerCase().includes("invalid")
+              ? "border-red-500 bg-red-500/10 text-red-300"
+              : "border-zinc-700 bg-zinc-900 text-zinc-200"
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
       {showReview && (
         <AssignmentReviewForm
