@@ -59,6 +59,12 @@ export default function Home() {
       if (priorityWord === 'low') return 20;
       return 0; // fallback just in case
     };
+      const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]); // This is the function that runs the math engine
+      const handleOptimizeSchedule = () => {
+      const results = suggestNewSchedule(tasks, 300); // Run the math/reschedule engine set to 300 minutes just like on OverloadBanner
+      setScheduleSuggestions(results); // save the results to the state
+      console.log("Optimization calculated successfully!");
+  };
 
     const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
      try {
@@ -71,17 +77,11 @@ export default function Home() {
          await fetchAssignments(); // Refresh the list so the UI shows the updated official date
         
          setScheduleSuggestions(prev => prev.filter(s => s._id !== taskId));// Clear the suggestion for this specific task since it's now the "official" date/ new date
-         console.log("Database updated sucessfully")
-     }
+         console.log("Database updated successfully")
+      }
       } catch (error) {
        console.error("Failed to accept suggestion:", error);
       }
-   };
-
-    
-    setScheduleSuggestions(results);
-    
-    console.log("Optimization calculated successfully!");
   };
   useEffect(() => {
   if (tasks.length > 0 && scheduleSuggestions.length === 0) { // If we have tasks but haven't calculated suggestions yet
