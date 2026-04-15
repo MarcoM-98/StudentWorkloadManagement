@@ -107,7 +107,7 @@ if (isEditing) {
                   <select
                       className="w-full p-2 rounded border dark:bg-zinc-800 dark:border-zinc-700 outline-none cursor-pointer"
                       value={editData.priority}
-                      onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
+                      onChange={(e) => setEditData({ ...editData, priority: e.target.value, customPercentage:null,})}
                   >
                       <option value="low">Low (20%)</option>
                       <option value="medium">Medium (50%)</option>
