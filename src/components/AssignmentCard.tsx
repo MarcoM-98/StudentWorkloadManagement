@@ -182,11 +182,11 @@ if (isEditing) {
         <h3 className="text-md font-bold">{title}</h3>
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
        {suggestedDate && (
-        <div className="mt-2 p-2 bg-blue-50 dark:bg-zinc-800 rounded border border-blue-100">
-        <div>
-        <p className="text-[10px] font-bold text-blue-500 uppercase">Optimization Suggestion</p>
-        <p className="text-sm font-semibold text-blue-600">
-        Reschedule to: {new Date(suggestedDate).toLocaleDateString()}
+        <div className="mt-2 p-2 bg-blue-50 dark:bg-zinc-800 rounded border border-blue-100 flex justify-between items-center">
+         <div>
+          <p className="text-[10px] font-bold text-blue-500 uppercase">Optimization Suggestion</p>
+          <p className="text-sm font-semibold text-blue-600">
+            Reschedule to: {new Date(suggestedDate).toLocaleDateString()}
           </p>
         </div>
         <button
