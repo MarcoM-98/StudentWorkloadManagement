@@ -49,7 +49,6 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
