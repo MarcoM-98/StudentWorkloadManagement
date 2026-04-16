@@ -49,7 +49,6 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
@@ -233,7 +232,8 @@ export default function UploadForm() {
           return;
         }
 
-        await fetchSavedAssignments();
+        const newAssignment = mapAssignmentFromDb(data);
+        setSavedAssignments((prev) => [...prev, newAssignment]);
       }
 
       setAssignmentTitle("");
@@ -270,7 +270,14 @@ export default function UploadForm() {
         return;
       }
 
-      await fetchSavedAssignments();
+      const updatedAssignment = mapAssignmentFromDb(data);
+
+      setSavedAssignments((prev) =>
+        prev.map((assignment) =>
+          assignment.id === id ? updatedAssignment : assignment
+        )
+      );
+
       setMessage("Assignment updated.");
     } catch (error) {
       console.error(error);
@@ -291,7 +298,10 @@ export default function UploadForm() {
         return;
       }
 
-      await fetchSavedAssignments();
+      setSavedAssignments((prev) =>
+        prev.filter((assignment) => assignment.id !== id)
+      );
+
       setMessage("Assignment deleted.");
     } catch (error) {
       console.error(error);
@@ -315,7 +325,7 @@ export default function UploadForm() {
           type="file"
           onChange={handleFileChange}
           className="hidden"
-          accept=".txt"
+          accept=".txt,.pdf,.docx"
         />
 
         <div
@@ -331,7 +341,7 @@ export default function UploadForm() {
         >
           <p className="mb-2 text-3xl">📄</p>
           <p className="text-xl font-semibold text-white">
-            Drag and drop a TXT file here
+            Drag and drop a TXT, PDF, or DOCX file here
           </p>
           <p className="text-sm text-zinc-400">or click to choose a file</p>
 
