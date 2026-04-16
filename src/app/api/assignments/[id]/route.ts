@@ -28,3 +28,24 @@ try {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectDB();
+    const { id } = await params;
+
+    const deletedAssignment = await Assignment.findByIdAndDelete(id);
+
+    if (!deletedAssignment) {
+      return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Assignment deleted" }, { status: 200 });
+  } catch (error: any) {
+    console.error("Delete Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

@@ -25,6 +25,15 @@ function normalizeDateForInput(dateString) {
   return parsed.toISOString().split("T")[0];
 }
 
+function mapAssignmentFromDb(assignment) {
+  return {
+    id: assignment._id,
+    title: assignment.title || "",
+    minutes: assignment.duration ?? 0,
+    dueDate: normalizeDateForInput(assignment.dueDate),
+  };
+}
+
 export default function UploadForm() {
   const fileInputRef = useRef(null);
 
@@ -56,6 +65,30 @@ export default function UploadForm() {
     return () => clearInterval(interval);
   }, [loading]);
 
+  async function fetchSavedAssignments() {
+    try {
+      const response = await fetch("/api/assignments");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch assignments from database.");
+      }
+
+      const data = await response.json();
+      const normalizedAssignments = Array.isArray(data)
+        ? data.map(mapAssignmentFromDb)
+        : [];
+
+      setSavedAssignments(normalizedAssignments);
+    } catch (error) {
+      console.error("Failed to load assignments:", error);
+      setMessage("Could not load saved assignments from database.");
+    }
+  }
+
+  useEffect(() => {
+    fetchSavedAssignments();
+  }, []);
+
   function handleSelectedFile(selectedFile) {
     if (!selectedFile) return;
     setFile(selectedFile);
@@ -63,13 +96,6 @@ export default function UploadForm() {
     setShowReview(false);
     setEditingId(null);
   }
-
-  useEffect(() => {
-    const stored = localStorage.getItem("savedAssignments");
-    if (stored) {
-      setSavedAssignments(JSON.parse(stored));
-    }
-  }, []);
 
   function handleFileChange(e) {
     handleSelectedFile(e.target.files?.[0]);
@@ -167,57 +193,110 @@ export default function UploadForm() {
     }
   }
 
-  function handleReviewSubmit(e) {
+  async function handleReviewSubmit(e) {
     e.preventDefault();
 
     const reviewedAssignment = {
-      id: editingId ?? Date.now(),
       title: assignmentTitle,
-      minutes: Number(minutes),
+      duration: Number(minutes),
       dueDate: normalizeDateForInput(dueDate),
+      priorityPercentage: 0,
     };
 
-    const updatedAssignments =
-      editingId !== null
-        ? savedAssignments.map((assignment) =>
-            assignment.id === editingId ? reviewedAssignment : assignment
-          )
-        : [...savedAssignments, reviewedAssignment];
+    try {
+      if (editingId !== null) {
+        const updatedAssignments = savedAssignments.map((assignment) =>
+          assignment.id === editingId
+            ? {
+                ...assignment,
+                title: assignmentTitle,
+                minutes: Number(minutes),
+                dueDate: normalizeDateForInput(dueDate),
+              }
+            : assignment
+        );
 
-    setSavedAssignments(updatedAssignments);
-    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+        setSavedAssignments(updatedAssignments);
+      } else {
+        const response = await fetch("/api/assignments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reviewedAssignment),
+        });
 
-    setAssignmentTitle("");
-    setMinutes("");
-    setDueDate("");
-    setShowReview(false);
-    setEditingId(null);
-    setFile(null);
-    setMessage("");
+        const data = await response.json();
+
+        if (!response.ok) {
+          setMessage(data.error || "Failed to save assignment.");
+          return;
+        }
+
+        await fetchSavedAssignments();
+      }
+
+      setAssignmentTitle("");
+      setMinutes("");
+      setDueDate("");
+      setShowReview(false);
+      setEditingId(null);
+      setFile(null);
+      setMessage("");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to save assignment.");
+    }
   }
 
-  function handleSaveEdit(id, updatedFields) {
-    const updatedAssignments = savedAssignments.map((assignment) =>
-      assignment.id === id
-        ? {
-            ...assignment,
-            ...updatedFields,
-            dueDate: normalizeDateForInput(updatedFields.dueDate),
-          }
-        : assignment
-    );
+  async function handleSaveEdit(id, updatedFields) {
+    try {
+      const response = await fetch(`/api/assignments/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: updatedFields.title,
+          duration: Number(updatedFields.minutes),
+          dueDate: normalizeDateForInput(updatedFields.dueDate),
+        }),
+      });
 
-    setSavedAssignments(updatedAssignments);
-    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to update assignment.");
+        return;
+      }
+
+      await fetchSavedAssignments();
+      setMessage("Assignment updated.");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to update assignment.");
+    }
   }
 
-  function handleDeleteAssignment(id) {
-    const updatedAssignments = savedAssignments.filter(
-      (assignment) => assignment.id !== id
-    );
+  async function handleDeleteAssignment(id) {
+    try {
+      const response = await fetch(`/api/assignments/${id}`, {
+        method: "DELETE",
+      });
 
-    setSavedAssignments(updatedAssignments);
-    localStorage.setItem("savedAssignments", JSON.stringify(updatedAssignments));
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Failed to delete assignment.");
+        return;
+      }
+
+      await fetchSavedAssignments();
+      setMessage("Assignment deleted.");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to delete assignment.");
+    }
   }
 
   function handleCancelEdit() {
@@ -264,7 +343,6 @@ export default function UploadForm() {
           )}
         </div>
 
-        {/* BUTTON + SPINNER */}
         <div className="flex items-center gap-4">
           <button
             type="submit"
@@ -292,7 +370,8 @@ export default function UploadForm() {
           className={`rounded-lg border px-4 py-3 text-sm ${
             message.toLowerCase().includes("failed") ||
             message.toLowerCase().includes("wrong") ||
-            message.toLowerCase().includes("invalid")
+            message.toLowerCase().includes("invalid") ||
+            message.toLowerCase().includes("could not")
               ? "border-red-500 bg-red-500/10 text-red-300"
               : "border-zinc-700 bg-zinc-900 text-zinc-200"
           }`}
