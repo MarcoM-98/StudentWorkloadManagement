@@ -9,10 +9,11 @@ type AssignmentProps = {
     priorityWord: string; // this will be the low, medium and immediate words
     customPercentage?: number | null; // this may exist or not, if it does it allows the user to custom type a number
     onUpdate?: () => void; // this tells the page/dashboard that we have change something and to refresh the list
+    suggestedDate?: string; // tells the suggested date
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate }: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, suggestedDate}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -106,7 +107,7 @@ if (isEditing) {
                   <select
                       className="w-full p-2 rounded border dark:bg-zinc-800 dark:border-zinc-700 outline-none cursor-pointer"
                       value={editData.priority}
-                      onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
+                      onChange={(e) => setEditData({ ...editData, priority: e.target.value, customPercentage:null,})}
                   >
                       <option value="low">Low (20%)</option>
                       <option value="medium">Medium (50%)</option>
@@ -179,7 +180,14 @@ if (isEditing) {
       <div>
         <h3 className="text-md font-bold">{title}</h3>
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
-      </div>
+       {suggestedDate && (
+        <div className="mt-2 p-2 bg-blue-50 dark:bg-zinc-800 rounded border border-blue-100">
+        <p className="text-sm font-semibold text-blue-600">
+        Suggested Date: {new Date(suggestedDate).toLocaleDateString()}
+        </p>
+        </div>
+        )}
+        </div>
       <div className="flex flex-col items-end">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
           Priority: {priorityPercentage}%

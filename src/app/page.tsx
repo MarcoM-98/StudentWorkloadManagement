@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
+import { suggestNewSchedule } from "@/lib/rescheduler";
 
 // We define the shape of the data thats going to show
 type Task = {
@@ -58,7 +59,36 @@ export default function Home() {
       if (priorityWord === 'low') return 20;
       return 0; // fallback just in case
     };
+      const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]); // This is the function that runs the math engine
+      const handleOptimizeSchedule = () => {
+      const results = suggestNewSchedule(tasks, 300); // Run the math/reschedule engine set to 300 minutes just like on OverloadBanner
+      setScheduleSuggestions(results); // save the results to the state
+      console.log("Optimization calculated successfully!");
+  };
 
+    const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
+     try {
+       const response = await fetch(`/api/assignments/${taskId}`, { //send a PATCH request to API route/mongodb because we want to suggest a new date
+         method: 'PATCH',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
+      });
+      if (response.ok) {
+         await fetchAssignments(); // Refresh the list so the UI shows the updated official date
+        
+         setScheduleSuggestions(prev => prev.filter(s => s._id !== taskId));// Clear the suggestion for this specific task since it's now the "official" date/ new date
+         console.log("Database updated successfully")
+      }
+      } catch (error) {
+       console.error("Failed to accept suggestion:", error);
+      }
+  };
+  useEffect(() => {
+  if (tasks.length > 0 && scheduleSuggestions.length === 0) { // If we have tasks but haven't calculated suggestions yet
+    console.log("Automatically running rescheduler logic...");
+    handleOptimizeSchedule(); // This triggers the math locally for now again, till uploadform is finally connected to mongodb
+  }
+}, [tasks, scheduleSuggestions]);
     // run the function we just created
    useEffect(() => { fetchAssignments();
   }, []);
@@ -90,7 +120,10 @@ export default function Home() {
                 <p className="text-zinc-500 animate-pulse text-lg">Loading your schedule please wait...</p>
               </div>
             ) : tasks.length > 0 ? (
-              tasks.map((task) => (
+
+              tasks.map((task) => { // chang ( to { with a return( because it needs to know which suggestion belonged to which task before rendering the card.
+                const suggestion = scheduleSuggestions.find(s => s._id === (task._id?.toString() || task._id));
+                return(
                 <AssignmentCard // if it finds work/assignments get their info
                   key={task._id}
                   id={task._id?.toString()|| task._id} // pass the id
@@ -101,8 +134,11 @@ export default function Home() {
                   priorityWord={task.priority} 
                   customPercentage={task.customPercentage}
                   onUpdate={fetchAssignments} // Pass the refresh function
+                  suggestedDate={suggestion?.suggestedDate}
+                  onAcceptSuggestion={handleAcceptSuggestion}
                 />
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
                 <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> {/* show caught up message if no work left*/}
