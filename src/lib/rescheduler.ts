@@ -6,7 +6,30 @@ export type Task = {// Every task must have these, we can add anything else that
   priorityPercentage: number; 
 };
 
-export function suggestNewSchedule(tasks: Task[], dailyMinutesMax: number) { // This uses the definition above to process the list.
+export type Suggestion = {
+  _id: string;
+  title: string;
+  suggestedDate: string;
+  isDelayed: boolean;
+  isCritical: boolean;
+};
+
+export function suggestNewSchedule(tasks: Task[], dailyMinutesMax: number): Suggestion[] { // This uses the definition above to process the list.
+
+const now = new Date().getTime();
+
+  const sortedTasks = [...tasks].sort((a, b) => {   // Balance Priority vs. Urgency (Due Date)
+
+    const aDaysLeft = Math.max(0, (new Date(a.dueDate).getTime() - now) / (1000 * 60 * 60 * 24));  // Calculate days left until the assignment is due 
+    const bDaysLeft = Math.max(0, (new Date(b.dueDate).getTime() - now) / (1000 * 60 * 60 * 24)); // also converting milliseconds to day so we can get a good score by sorting
+
+    
+    
+    const scoreA = a.priorityPercentage - (aDaysLeft * 5); //  High priority increases score, but having more days left decreases it.
+    const scoreB = b.priorityPercentage - (bDaysLeft * 5); // The 5 is a multiplier. we can tweak it if due dates aren't pulling enough weight.
+
+    return scoreB - scoreA; // Sort highest score to the top
+  });
   
   const sortedTasks = [...tasks].sort((a, b) => b.priorityPercentage - a.priorityPercentage); // Sort by Priority Score/percentage so high-value work stays as early as possible ?
 
