@@ -3,9 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { doSignOut } from '@/lib/auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { currentUser } = useAuth();
+
+  const handleLogout = async () => {
+    await doSignOut();
+  };
 
   return (
     <div className="flex h-screen bg-zinc-50 dark:bg-zinc-900">
