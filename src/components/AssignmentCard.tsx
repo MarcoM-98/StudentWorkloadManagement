@@ -11,10 +11,12 @@ type AssignmentProps = {
     onUpdate?: () => void; // this tells the page/dashboard that we have change something and to refresh the list
     suggestedDate?: string; // tells the suggested date
     onAcceptSuggestion?: (id: string, newDate: string) => void;
+    isDelayed?: boolean;
+    isCritical?: boolean;
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, suggestedDate, onAcceptSuggestion}: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, suggestedDate, onAcceptSuggestion, isDelayed, isCritical}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -182,10 +184,25 @@ if (isEditing) {
         <h3 className="text-md font-bold">{title}</h3>
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
        {suggestedDate && (
-        <div className="mt-2 p-2 bg-blue-50 dark:bg-zinc-800 rounded border border-blue-100 flex justify-between items-center">
+        <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
+          isDelayed ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
+          isCritical ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200' : 
+          'bg-blue-50 dark:bg-zinc-800 border-blue-100'
+        }`}>
          <div>
-          <p className="text-[10px] font-bold text-blue-500 uppercase">Optimization Suggestion</p>
-          <p className="text-sm font-semibold text-blue-600">
+          <p className={`text-[10px] font-bold uppercase ${
+            isDelayed ? 'text-red-600' : 
+            isCritical ? 'text-yellow-600' : 
+            'text-blue-500'
+          }`}>
+            {isDelayed ? 'Late Warning - Reschedule' : isCritical ? 'Critical Deadline' : 'Optimization Suggestion'}
+          </p>
+          <p className={`text-sm font-semibold ${
+            isDelayed ? 'text-red-700 dark:text-red-400' : 
+            isCritical ? 'text-yellow-700 dark:text-yellow-400' : 
+            'text-blue-600'
+          }`}>
+
             Reschedule to: {new Date(suggestedDate).toLocaleDateString()}
           </p>
         </div>
@@ -194,7 +211,12 @@ if (isEditing) {
          e.stopPropagation(); // Prevents opening the edit mode when clicking the button
          onAcceptSuggestion?.(id, suggestedDate);
       }}
-      className="ml-4 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition-colors"
+      className={`ml-4 px-3 py-1 text-white text-xs font-bold rounded transition-colors ${
+           isDelayed ? 'bg-red-600 hover:bg-red-700' : 
+           isCritical ? 'bg-yellow-600 hover:bg-yellow-700' : 
+           'bg-blue-600 hover:bg-blue-700'
+      }`}
+      
     >
       Accept
     </button>
