@@ -49,7 +49,6 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
@@ -249,7 +248,6 @@ export default function UploadForm() {
       setMessage("Failed to save assignment.");
     }
   }
-}
 
   async function handleSaveEdit(id, updatedFields) {
     try {
@@ -265,7 +263,7 @@ export default function UploadForm() {
         }),
       });
 
-        const data = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
         setMessage(data.error || "Failed to update assignment.");
