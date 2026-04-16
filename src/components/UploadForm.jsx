@@ -327,7 +327,7 @@ export default function UploadForm() {
           type="file"
           onChange={handleFileChange}
           className="hidden"
-          accept=".txt"
+          accept=".txt,.pdf,.docx"
         />
 
         <div
@@ -343,7 +343,7 @@ export default function UploadForm() {
         >
           <p className="mb-2 text-3xl">📄</p>
           <p className="text-xl font-semibold text-white">
-            Drag and drop a TXT file here
+            Drag and drop a TXT, PDF, or DOCX file here
           </p>
           <p className="text-sm text-zinc-400">or click to choose a file</p>
 

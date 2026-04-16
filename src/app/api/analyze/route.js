@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"; // Lets us send JSON responses back 
 import fs from "fs"; // read files from disk
 import path from "path"; // build safe file paths for diff OS
 import OpenAI from "openai";
+import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
 
 // Create one OpenAI client using the API key from your .env file
 const openai = new OpenAI({
@@ -45,8 +47,10 @@ export async function POST(req) {
       );
     }
 
+    const safeFilename = path.basename(filename);
+
     // process.cwd() = root of your Next.js project
-    const filePath = path.join(process.cwd(), "uploads", filename);
+    const filePath = path.join(process.cwd(), "uploads", safeFilename);
 
     if (!fs.existsSync(filePath)) {
       return NextResponse.json(
@@ -55,16 +59,32 @@ export async function POST(req) {
       );
     }
 
-    const lowerName = filename.toLowerCase();
+    const lowerName = safeFilename.toLowerCase();
 
-    if (!lowerName.endsWith(".txt")) {
+    if (
+      !lowerName.endsWith(".txt") &&
+      !lowerName.endsWith(".pdf") &&
+      !lowerName.endsWith(".docx")
+    ) {
       return NextResponse.json(
-        { error: "Only TXT files are currently supported for analysis." },
+        { error: "Only TXT, PDF, and DOCX files are currently supported for analysis." },
         { status: 400 }
       );
     }
 
-    const content = fs.readFileSync(filePath, "utf-8");
+    let content = "";
+
+    if (lowerName.endsWith(".txt")) {
+      content = fs.readFileSync(filePath, "utf-8");
+    } else if (lowerName.endsWith(".pdf")) {
+      const fileBuffer = fs.readFileSync(filePath);
+      const pdfData = await pdfParse(fileBuffer);
+      content = pdfData.text || "";
+    } else if (lowerName.endsWith(".docx")) {
+      const fileBuffer = fs.readFileSync(filePath);
+      const docxData = await mammoth.extractRawText({ buffer: fileBuffer });
+      content = docxData.value || "";
+    }
 
     if (!content.trim()) {
       return NextResponse.json(
