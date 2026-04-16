@@ -31,25 +31,35 @@ const now = new Date().getTime();
     return scoreB - scoreA; // Sort highest score to the top
   });
   
-  const sortedTasks = [...tasks].sort((a, b) => b.priorityPercentage - a.priorityPercentage); // Sort by Priority Score/percentage so high-value work stays as early as possible ?
-
-  let currentDay = new Date();
-  currentDay.setHours(0, 0, 0, 0); // Reset time to midnight for clean math
-  
-  let minutesUsedToday = 0; // tracks how much time has been assigned that day if time reaches that then it moves to the next day to start the counter from 0 min again 
-  const suggestions = []; // empty array that will store final(new) results/ date of the assignments
+ let currentDay = new Date(); // time/date of today
+  let minutesUsedToday = 0; 
+  const suggestions: Suggestion[] = []; 
 
   for (const task of sortedTasks) {
-    if (minutesUsedToday + task.duration > dailyMinutesMax) { // check if adding this task/assignment goes over the daily time limit if so, move it to tomorrow and reset the timer.
+    const currentHour = currentDay.getHours();
+
+    
+    if (minutesUsedToday + task.duration > dailyMinutesMax || currentHour >= 22) { // Check if daily time is full OR if it's getting too late in the day ( made it past 10 PM / 22:00)
+                                                                                // can switch to a different time we can agree on ?
       currentDay.setDate(currentDay.getDate() + 1);
+      currentDay.setHours(9, 0, 0, 0); // Start fresh at 9:00 AM tomorrow instead of midnight
+                            // checks if the current hour is past 10 PM. If it is, or if the time limit is maxed out, it pushes the work to 9:00 AM the next day.
       minutesUsedToday = 0;
     }
-    suggestions.push({ // adds them to the end of our result list which is the array in line 17 
+    
+    const suggestedDateObj = new Date(currentDay);
+    const dueDateObj = new Date(task.dueDate);
+
+    
+    const timeDifference = dueDateObj.getTime() - suggestedDateObj.getTime(); // Calculate if it's due within 24 hours of our suggested date
+    const isCritical = timeDifference >= 0 && timeDifference < (1000 * 60 * 60 * 24);
+
+    suggestions.push({ // adds them to the end of our result list 
       _id: task._id, // identifies the assignment
       title: task.title,
-      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string. such as year, month, day
-       
-      isDelayed: new Date(currentDay) > new Date(task.dueDate)  // this helps the UI show a "Late" warning that we can implement ?
+      suggestedDate: suggestedDateObj.toISOString().split('T')[0], 
+      isDelayed: suggestedDateObj > dueDateObj, 
+      isCritical: isCritical  // this helps the UI show a "Late" warning
     });
     
     minutesUsedToday += task.duration; // adds the current assignment's minutes to the day's total so that the next assignment in the loop knows how much space is left in the day
