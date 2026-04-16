@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"; // Lets us send JSON responses back 
 import fs from "fs"; // read files from disk
 import path from "path"; // build safe file paths for diff OS
 import OpenAI from "openai";
-import pdfParse from "pdf-parse";
+import { extractText, getDocumentProxy } from "unpdf";
 import mammoth from "mammoth";
 
 // Create one OpenAI client using the API key from your .env file
@@ -78,7 +78,8 @@ export async function POST(req) {
       content = fs.readFileSync(filePath, "utf-8");
     } else if (lowerName.endsWith(".pdf")) {
       const fileBuffer = fs.readFileSync(filePath);
-      const pdfData = await pdfParse(fileBuffer);
+      const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
+      const pdfData = await extractText(pdf, { mergePages: true });
       content = pdfData.text || "";
     } else if (lowerName.endsWith(".docx")) {
       const fileBuffer = fs.readFileSync(filePath);
