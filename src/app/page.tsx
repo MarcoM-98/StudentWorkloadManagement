@@ -136,6 +136,8 @@ export default function Home() {
                   onUpdate={fetchAssignments} // Pass the refresh function
                   suggestedDate={suggestion?.suggestedDate}
                   onAcceptSuggestion={handleAcceptSuggestion}
+                  isDelayed={suggestion?.isDelayed}
+                  isCritical={suggestion?.isCritical}
                 />
                 );
               })
