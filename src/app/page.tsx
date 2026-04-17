@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
+import ScheduleGrid from "@/components/ScheduleGrid";
 import { suggestNewSchedule } from "@/lib/rescheduler";
 
 // We define the shape of the data thats going to show
@@ -95,11 +96,18 @@ export default function Home() {
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <OverloadBanner /> {/* overload banner warning*/}
         
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="mt-6">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">
+                Schedule View
+              </h2>
+              <ScheduleGrid />
+            </div>
+
+            <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
             
             {/* overloaded badge! */}
