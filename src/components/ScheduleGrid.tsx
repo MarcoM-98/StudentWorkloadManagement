@@ -18,7 +18,7 @@ type ScheduleBlock = {
   id: string;
   assignmentId: string;
   title: string;
-  dayOffset: number;
+  blockDate: string; // YYYY-MM-DD
   startHour: number;
   startMinute: number;
   durationMinutes: number;
@@ -32,12 +32,26 @@ type PopupPosition = {
   y: number;
 };
 
+type DragState = {
+  blockId: string;
+  pointerOffsetY: number;
+};
+
 const HOUR_HEIGHT = 64;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 const TOTAL_DAY_HEIGHT = 24 * HOUR_HEIGHT;
+const TIME_LABEL_WIDTH = 80;
+const COLUMN_MIN_WIDTH = 140;
 
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function parseLocalDate(dateString: string) {
@@ -150,53 +164,32 @@ function getColorClass(index: number) {
   return colors[index % colors.length];
 }
 
-function mapTasksToScheduleBlocks(
-  tasks: CalendarTask[],
-  visibleStartDate: Date,
-  numberOfDays: number
-): ScheduleBlock[] {
-  const visibleEndDate = new Date(visibleStartDate);
-  visibleEndDate.setDate(visibleStartDate.getDate() + numberOfDays - 1);
+function mapTasksToScheduleBlocks(tasks: CalendarTask[]): ScheduleBlock[] {
+  return tasks
+    .map((task, index) => {
+      const taskDate = parseLocalDate(task.dueDate);
+      if (!taskDate) return null;
 
-  const blocks: ScheduleBlock[] = [];
-  const blocksPerDay: Record<number, number> = {};
+      return {
+        id: task._id,
+        assignmentId: task._id,
+        title: task.title,
+        blockDate: formatDateKey(taskDate),
+        startHour: 18,
+        startMinute: 0,
+        durationMinutes: Math.max(task.duration || 0, 30),
+        colorClass: getColorClass(index),
+        chunkIndex: 0,
+        isManuallyPlaced: false,
+      } satisfies ScheduleBlock;
+    })
+    .filter((block): block is ScheduleBlock => block !== null);
+}
 
-  tasks.forEach((task, index) => {
-    const taskDate = parseLocalDate(task.dueDate);
-    if (!taskDate) return;
-
-    if (taskDate < visibleStartDate || taskDate > visibleEndDate) {
-      return;
-    }
-
-    const dayOffset = getDayDifference(visibleStartDate, taskDate);
-
-    if (dayOffset < 0 || dayOffset >= numberOfDays) {
-      return;
-    }
-
-    const existingCountForDay = blocksPerDay[dayOffset] || 0;
-
-    const startHour = 18 + existingCountForDay;
-    const startMinute = 0;
-
-    blocks.push({
-      id: task._id,
-      assignmentId: task._id,
-      title: task.title,
-      dayOffset,
-      startHour,
-      startMinute,
-      durationMinutes: Math.max(task.duration || 0, 30),
-      colorClass: getColorClass(index),
-      chunkIndex: 0,
-      isManuallyPlaced: false,
-    });
-
-    blocksPerDay[dayOffset] = existingCountForDay + 1;
-  });
-
-  return blocks;
+function getVisibleDayOffset(blockDate: string, visibleStartDate: Date) {
+  const blockDateObj = parseLocalDate(blockDate);
+  if (!blockDateObj) return null;
+  return getDayDifference(visibleStartDate, blockDateObj);
 }
 
 function HourRow({
@@ -235,24 +228,20 @@ function HourRow({
 function splitMinutesAcrossDays(
   block: ScheduleBlock,
   newBlockId: string,
-  splitMinutes: number,
-  numberOfDays: number
+  splitMinutes: number
 ) {
   const remainingMinutes = block.durationMinutes - splitMinutes;
   const blockStartTotal = block.startHour * 60 + block.startMinute;
   const splitStartTotal = blockStartTotal + remainingMinutes;
 
-  let newDayOffset = block.dayOffset;
-  let newStartTotal = splitStartTotal;
+  const extraDays = Math.floor(splitStartTotal / (24 * 60));
+  const newStartTotal = splitStartTotal % (24 * 60);
 
-  while (newStartTotal >= 24 * 60) {
-    newStartTotal -= 24 * 60;
-    newDayOffset += 1;
-  }
+  const baseDate = parseLocalDate(block.blockDate);
+  if (!baseDate) return null;
 
-  if (newDayOffset >= numberOfDays) {
-    return null;
-  }
+  const newDate = new Date(baseDate);
+  newDate.setDate(newDate.getDate() + extraDays);
 
   const updatedOriginal: ScheduleBlock = {
     ...block,
@@ -263,7 +252,7 @@ function splitMinutesAcrossDays(
   const newBlock: ScheduleBlock = {
     ...block,
     id: newBlockId,
-    dayOffset: newDayOffset,
+    blockDate: formatDateKey(newDate),
     startHour: Math.floor(newStartTotal / 60),
     startMinute: newStartTotal % 60,
     durationMinutes: splitMinutes,
@@ -272,6 +261,14 @@ function splitMinutesAcrossDays(
   };
 
   return { updatedOriginal, newBlock };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}
+
+function snapMinutesToThirty(totalMinutes: number) {
+  return Math.round(totalMinutes / 30) * 30;
 }
 
 export default function ScheduleGrid({
@@ -283,9 +280,10 @@ export default function ScheduleGrid({
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
+  const [dragState, setDragState] = useState<DragState | null>(null);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
-  const gridRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   const visibleStartDate = useMemo(() => {
     const date = new Date(today);
@@ -302,11 +300,7 @@ export default function ScheduleGrid({
 
   useEffect(() => {
     setScheduleBlocks((prevBlocks) => {
-      const generatedBlocks = mapTasksToScheduleBlocks(
-        tasks,
-        visibleStartDate,
-        numberOfDays
-      );
+      const generatedBlocks = mapTasksToScheduleBlocks(tasks);
 
       const manualBlocks = prevBlocks.filter((block) => block.isManuallyPlaced);
       const manualAssignmentIds = new Set(
@@ -319,26 +313,79 @@ export default function ScheduleGrid({
 
       return [...generatedForUneditedAssignments, ...manualBlocks];
     });
-  }, [tasks, visibleStartDate, numberOfDays]);
+  }, [tasks]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
-
       if (popupRef.current?.contains(target)) return;
 
       setSelectedBlockId(null);
       setPopupPosition(null);
     }
 
-    if (selectedBlockId) {
+    if (selectedBlockId && !dragState) {
       document.addEventListener("mousedown", handleOutsideClick);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [selectedBlockId]);
+  }, [selectedBlockId, dragState]);
+
+  useEffect(() => {
+    function handlePointerMove(event: MouseEvent) {
+      if (!dragState || !overlayRef.current) return;
+
+      const overlayRect = overlayRef.current.getBoundingClientRect();
+      const usableWidth = overlayRect.width - TIME_LABEL_WIDTH;
+      const dayColumnWidth = usableWidth / numberOfDays;
+
+      const pointerXInside = event.clientX - overlayRect.left - TIME_LABEL_WIDTH;
+      const pointerYInside = event.clientY - overlayRect.top - dragState.pointerOffsetY;
+
+      let columnIndex = Math.floor(pointerXInside / dayColumnWidth);
+      columnIndex = clamp(columnIndex, 0, numberOfDays - 1);
+
+      const snappedMinutes = snapMinutesToThirty(
+        clamp(Math.round(pointerYInside / MINUTE_HEIGHT), 0, 24 * 60)
+      );
+
+      const startMinutesCapped = clamp(snappedMinutes, 0, 24 * 60 - 30);
+
+      const newDate = new Date(visibleStartDate);
+      newDate.setDate(visibleStartDate.getDate() + columnIndex);
+
+      setScheduleBlocks((prev) =>
+        prev.map((block) =>
+          block.id === dragState.blockId
+            ? {
+                ...block,
+                blockDate: formatDateKey(newDate),
+                startHour: Math.floor(startMinutesCapped / 60),
+                startMinute: startMinutesCapped % 60,
+                isManuallyPlaced: true,
+              }
+            : block
+        )
+      );
+    }
+
+    function handlePointerUp() {
+      if (!dragState) return;
+      setDragState(null);
+    }
+
+    if (dragState) {
+      window.addEventListener("mousemove", handlePointerMove);
+      window.addEventListener("mouseup", handlePointerUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("mouseup", handlePointerUp);
+    };
+  }, [dragState, numberOfDays, visibleStartDate]);
 
   const selectedBlock = useMemo(
     () => scheduleBlocks.find((block) => block.id === selectedBlockId) || null,
@@ -369,27 +416,45 @@ export default function ScheduleGrid({
   ) {
     event.stopPropagation();
 
-    if (!gridRef.current) {
+    if (!overlayRef.current) {
       setSelectedBlockId(blockId);
-      setPopupPosition({ x: 0, y: 0 });
+      setPopupPosition({ x: 16, y: 16 });
       return;
     }
 
-    const gridRect = gridRef.current.getBoundingClientRect();
-    const popupWidth = 150;
-    const popupHeight = 70;
+    const overlayRect = overlayRef.current.getBoundingClientRect();
+    const popupWidth = 170;
+    const popupHeight = 92;
 
-    let x = event.clientX - gridRect.left + 8;
-    let y = event.clientY - gridRect.top + 8;
+    let x = event.clientX - overlayRect.left + 8;
+    let y = event.clientY - overlayRect.top + 8;
 
-    const maxX = gridRect.width - popupWidth - 8;
-    const maxY = gridRect.height - popupHeight - 8;
+    const maxX = overlayRect.width - popupWidth - 8;
+    const maxY = overlayRect.height - popupHeight - 8;
 
     x = Math.max(8, Math.min(x, maxX));
     y = Math.max(8, Math.min(y, maxY));
 
     setSelectedBlockId(blockId);
     setPopupPosition({ x, y });
+  }
+
+  function handleBlockMouseDown(
+    event: React.MouseEvent<HTMLDivElement>,
+    block: ScheduleBlock
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const blockRect = event.currentTarget.getBoundingClientRect();
+    const pointerOffsetY = event.clientY - blockRect.top;
+
+    setSelectedBlockId(block.id);
+    setPopupPosition(null);
+    setDragState({
+      blockId: block.id,
+      pointerOffsetY,
+    });
   }
 
   function handleSplitChunk() {
@@ -418,12 +483,11 @@ export default function ScheduleGrid({
     const splitResult = splitMinutesAcrossDays(
       selectedBlock,
       newBlockId,
-      splitMinutes,
-      numberOfDays
+      splitMinutes
     );
 
     if (!splitResult) {
-      window.alert("That split would push the new chunk outside the current visible window.");
+      window.alert("Unable to split this block.");
       return;
     }
 
@@ -435,6 +499,31 @@ export default function ScheduleGrid({
     setSelectedBlockId(splitResult.newBlock.id);
     setPopupPosition(null);
   }
+
+  const visibleBlocks = useMemo(() => {
+    return scheduleBlocks
+      .map((block) => {
+        const visibleDayOffset = getVisibleDayOffset(
+          block.blockDate,
+          visibleStartDate
+        );
+
+        return {
+          ...block,
+          visibleDayOffset,
+        };
+      })
+      .filter(
+        (
+          block
+        ): block is ScheduleBlock & {
+          visibleDayOffset: number;
+        } =>
+          block.visibleDayOffset !== null &&
+          block.visibleDayOffset >= 0 &&
+          block.visibleDayOffset < numberOfDays
+      );
+  }, [scheduleBlocks, visibleStartDate, numberOfDays]);
 
   return (
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-950">
@@ -512,7 +601,7 @@ export default function ScheduleGrid({
         </div>
 
         <div
-          ref={gridRef}
+          ref={overlayRef}
           className="pointer-events-none relative -mt-[1536px] grid min-w-[900px]"
           style={{
             gridTemplateColumns: `80px repeat(${numberOfDays}, minmax(140px, 1fr))`,
@@ -522,8 +611,8 @@ export default function ScheduleGrid({
           <div />
 
           {days.map((day, columnIndex) => {
-            const dayBlocks = scheduleBlocks.filter(
-              (block) => block.dayOffset === columnIndex
+            const dayBlocks = visibleBlocks.filter(
+              (block) => block.visibleDayOffset === columnIndex
             );
             const isTodayColumn = isSameDay(day, today);
 
@@ -543,14 +632,15 @@ export default function ScheduleGrid({
                   return (
                     <div
                       key={block.id}
-                      className={`pointer-events-auto absolute left-2 right-2 cursor-pointer overflow-hidden rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass} ${
+                      className={`pointer-events-auto absolute left-2 right-2 cursor-grab overflow-hidden rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass} ${
                         isSelected ? "ring-2 ring-white" : ""
-                      }`}
+                      } ${dragState?.blockId === block.id ? "cursor-grabbing opacity-90" : ""}`}
                       style={{
                         top: `${getBlockTop(block)}px`,
                         height: `${blockHeight}px`,
                       }}
                       onClick={(e) => handleSelectBlock(e, block.id)}
+                      onMouseDown={(e) => handleBlockMouseDown(e, block)}
                     >
                       <div
                         className={`overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-white/90 ${
@@ -576,10 +666,10 @@ export default function ScheduleGrid({
             );
           })}
 
-          {selectedBlock && popupPosition && (
+          {selectedBlock && popupPosition && !dragState && (
             <div
               ref={popupRef}
-              className="pointer-events-auto absolute z-40 w-36 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
+              className="pointer-events-auto absolute z-40 w-40 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
               style={{
                 left: `${popupPosition.x}px`,
                 top: `${popupPosition.y}px`,
