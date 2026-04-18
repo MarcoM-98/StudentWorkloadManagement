@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CalendarTask = {
   _id: string;
@@ -16,16 +16,20 @@ type ScheduleGridProps = {
 
 type ScheduleBlock = {
   id: string;
+  assignmentId: string;
   title: string;
   dayOffset: number;
   startHour: number;
   startMinute: number;
   durationMinutes: number;
   colorClass: string;
+  chunkIndex: number;
+  isManuallyPlaced: boolean;
 };
 
 const HOUR_HEIGHT = 64;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
+const TOTAL_DAY_HEIGHT = 24 * HOUR_HEIGHT;
 
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -36,20 +40,17 @@ function parseLocalDate(dateString: string) {
 
   const trimmed = String(dateString).trim();
 
-  // Handle ISO string like 2026-04-18T05:00:00.000Z
   if (trimmed.includes("T")) {
     const datePart = trimmed.split("T")[0];
     const [year, month, day] = datePart.split("-").map(Number);
     return new Date(year, month - 1, day);
   }
 
-  // Handle YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
     const [year, month, day] = trimmed.split("-").map(Number);
     return new Date(year, month - 1, day);
   }
 
-  // Handle MM/DD/YYYY
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
     const [month, day, year] = trimmed.split("/").map(Number);
     return new Date(year, month - 1, day);
@@ -157,14 +158,6 @@ function mapTasksToScheduleBlocks(
 
   tasks.forEach((task, index) => {
     const taskDate = parseLocalDate(task.dueDate);
-
-    console.log("GRID TASK:", {
-      title: task.title,
-      dueDate: task.dueDate,
-      parsedDate: taskDate,
-      duration: task.duration,
-    });
-
     if (!taskDate) return;
 
     if (taskDate < visibleStartDate || taskDate > visibleEndDate) {
@@ -179,18 +172,20 @@ function mapTasksToScheduleBlocks(
 
     const existingCountForDay = blocksPerDay[dayOffset] || 0;
 
-    // temporary placement rule
     const startHour = 18 + existingCountForDay;
     const startMinute = 0;
 
     blocks.push({
       id: task._id,
+      assignmentId: task._id,
       title: task.title,
       dayOffset,
       startHour,
       startMinute,
       durationMinutes: Math.max(task.duration || 0, 30),
       colorClass: getColorClass(index),
+      chunkIndex: 0,
+      isManuallyPlaced: false,
     });
 
     blocksPerDay[dayOffset] = existingCountForDay + 1;
@@ -232,12 +227,56 @@ function HourRow({
   );
 }
 
+function splitMinutesAcrossDays(
+  block: ScheduleBlock,
+  newBlockId: string,
+  splitMinutes: number,
+  numberOfDays: number
+) {
+  const remainingMinutes = block.durationMinutes - splitMinutes;
+  const blockStartTotal = block.startHour * 60 + block.startMinute;
+  const splitStartTotal = blockStartTotal + remainingMinutes;
+
+  let newDayOffset = block.dayOffset;
+  let newStartTotal = splitStartTotal;
+
+  while (newStartTotal >= 24 * 60) {
+    newStartTotal -= 24 * 60;
+    newDayOffset += 1;
+  }
+
+  if (newDayOffset >= numberOfDays) {
+    return null;
+  }
+
+  const updatedOriginal: ScheduleBlock = {
+    ...block,
+    durationMinutes: remainingMinutes,
+    isManuallyPlaced: true,
+  };
+
+  const newBlock: ScheduleBlock = {
+    ...block,
+    id: newBlockId,
+    dayOffset: newDayOffset,
+    startHour: Math.floor(newStartTotal / 60),
+    startMinute: newStartTotal % 60,
+    durationMinutes: splitMinutes,
+    chunkIndex: block.chunkIndex + 1,
+    isManuallyPlaced: true,
+  };
+
+  return { updatedOriginal, newBlock };
+}
+
 export default function ScheduleGrid({
   tasks,
   numberOfDays = 7,
 }: ScheduleGridProps) {
   const today = useMemo(() => getLocalStartOfDay(new Date()), []);
   const [dayOffset, setDayOffset] = useState(0);
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   const visibleStartDate = useMemo(() => {
     const date = new Date(today);
@@ -252,21 +291,92 @@ export default function ScheduleGrid({
 
   const hours = Array.from({ length: 24 }, (_, index) => index);
 
-  const scheduleBlocks = useMemo(
-    () => mapTasksToScheduleBlocks(tasks, visibleStartDate, numberOfDays),
-    [tasks, visibleStartDate, numberOfDays]
+  useEffect(() => {
+    setScheduleBlocks((prevBlocks) => {
+      const generatedBlocks = mapTasksToScheduleBlocks(
+        tasks,
+        visibleStartDate,
+        numberOfDays
+      );
+
+      const manualBlocks = prevBlocks.filter((block) => block.isManuallyPlaced);
+      const manualAssignmentIds = new Set(
+        manualBlocks.map((block) => block.assignmentId)
+      );
+
+      const generatedForUneditedAssignments = generatedBlocks.filter(
+        (block) => !manualAssignmentIds.has(block.assignmentId)
+      );
+
+      return [...generatedForUneditedAssignments, ...manualBlocks];
+    });
+  }, [tasks, visibleStartDate, numberOfDays]);
+
+  const selectedBlock = useMemo(
+    () => scheduleBlocks.find((block) => block.id === selectedBlockId) || null,
+    [scheduleBlocks, selectedBlockId]
   );
 
   function handlePrevious() {
+    setSelectedBlockId(null);
     setDayOffset((prev) => prev - 1);
   }
 
   function handleNext() {
+    setSelectedBlockId(null);
     setDayOffset((prev) => prev + 1);
   }
 
   function handleToday() {
+    setSelectedBlockId(null);
     setDayOffset(0);
+  }
+
+  function handleSelectBlock(blockId: string) {
+    setSelectedBlockId((prev) => (prev === blockId ? null : blockId));
+  }
+
+  function handleSplitChunk() {
+    if (!selectedBlock) return;
+
+    const input = window.prompt(
+      `Split how many minutes from "${selectedBlock.title}"?`,
+      "30"
+    );
+
+    if (!input) return;
+
+    const splitMinutes = Number(input);
+
+    if (
+      Number.isNaN(splitMinutes) ||
+      splitMinutes <= 0 ||
+      splitMinutes >= selectedBlock.durationMinutes
+    ) {
+      window.alert("Enter a number greater than 0 and less than the block duration.");
+      return;
+    }
+
+    const newBlockId = `${selectedBlock.assignmentId}-chunk-${Date.now()}`;
+
+    const splitResult = splitMinutesAcrossDays(
+      selectedBlock,
+      newBlockId,
+      splitMinutes,
+      numberOfDays
+    );
+
+    if (!splitResult) {
+      window.alert("That split would push the new chunk outside the current visible window.");
+      return;
+    }
+
+    setScheduleBlocks((prev) => {
+      const withoutOld = prev.filter((block) => block.id !== selectedBlock.id);
+      return [...withoutOld, splitResult.updatedOriginal, splitResult.newBlock];
+    });
+
+    setSelectedBlockId(splitResult.newBlock.id);
   }
 
   return (
@@ -348,7 +458,7 @@ export default function ScheduleGrid({
           className="pointer-events-none relative -mt-[1536px] grid min-w-[900px]"
           style={{
             gridTemplateColumns: `80px repeat(${numberOfDays}, minmax(140px, 1fr))`,
-            height: `${24 * HOUR_HEIGHT}px`,
+            height: `${TOTAL_DAY_HEIGHT}px`,
           }}
         >
           <div />
@@ -366,23 +476,48 @@ export default function ScheduleGrid({
                   isTodayColumn ? "bg-blue-500/5" : ""
                 }`}
               >
-                {dayBlocks.map((block) => (
-                  <div
-                    key={block.id}
-                    className={`pointer-events-auto absolute left-2 right-2 rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass}`}
-                    style={{
-                      top: `${getBlockTop(block)}px`,
-                      height: `${getBlockHeight(block)}px`,
-                    }}
-                  >
-                    <div className="text-xs font-medium text-white/90">
-                      {formatBlockTime(block)}
+                {dayBlocks.map((block) => {
+                  const isSelected = block.id === selectedBlockId;
+
+                  return (
+                    <div
+                      key={block.id}
+                      className={`pointer-events-auto absolute left-2 right-2 rounded-xl border px-3 py-2 text-white shadow-lg cursor-pointer ${block.colorClass} ${
+                        isSelected ? "ring-2 ring-white" : ""
+                      }`}
+                      style={{
+                        top: `${getBlockTop(block)}px`,
+                        height: `${getBlockHeight(block)}px`,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectBlock(block.id);
+                      }}
+                    >
+                      <div className="text-xs font-medium text-white/90">
+                        {formatBlockTime(block)}
+                      </div>
+                      <div className="mt-1 text-sm font-semibold leading-tight">
+                        {block.title}
+                      </div>
+
+                      {isSelected && (
+                        <div className="absolute left-1/2 top-full z-30 mt-2 w-36 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSplitChunk();
+                            }}
+                            className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
+                          >
+                            Split Chunk
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-1 text-sm font-semibold leading-tight">
-                      {block.title}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })}
