@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CalendarTask = {
   _id: string;
@@ -25,6 +25,11 @@ type ScheduleBlock = {
   colorClass: string;
   chunkIndex: number;
   isManuallyPlaced: boolean;
+};
+
+type PopupPosition = {
+  x: number;
+  y: number;
 };
 
 const HOUR_HEIGHT = 64;
@@ -277,6 +282,10 @@ export default function ScheduleGrid({
   const [dayOffset, setDayOffset] = useState(0);
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
+
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
 
   const visibleStartDate = useMemo(() => {
     const date = new Date(today);
@@ -312,6 +321,25 @@ export default function ScheduleGrid({
     });
   }, [tasks, visibleStartDate, numberOfDays]);
 
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      const target = event.target as Node;
+
+      if (popupRef.current?.contains(target)) return;
+
+      setSelectedBlockId(null);
+      setPopupPosition(null);
+    }
+
+    if (selectedBlockId) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [selectedBlockId]);
+
   const selectedBlock = useMemo(
     () => scheduleBlocks.find((block) => block.id === selectedBlockId) || null,
     [scheduleBlocks, selectedBlockId]
@@ -319,21 +347,49 @@ export default function ScheduleGrid({
 
   function handlePrevious() {
     setSelectedBlockId(null);
+    setPopupPosition(null);
     setDayOffset((prev) => prev - 1);
   }
 
   function handleNext() {
     setSelectedBlockId(null);
+    setPopupPosition(null);
     setDayOffset((prev) => prev + 1);
   }
 
   function handleToday() {
     setSelectedBlockId(null);
+    setPopupPosition(null);
     setDayOffset(0);
   }
 
-  function handleSelectBlock(blockId: string) {
-    setSelectedBlockId((prev) => (prev === blockId ? null : blockId));
+  function handleSelectBlock(
+    event: React.MouseEvent<HTMLDivElement>,
+    blockId: string
+  ) {
+    event.stopPropagation();
+
+    if (!gridRef.current) {
+      setSelectedBlockId(blockId);
+      setPopupPosition({ x: 0, y: 0 });
+      return;
+    }
+
+    const gridRect = gridRef.current.getBoundingClientRect();
+    const popupWidth = 150;
+    const popupHeight = 70;
+
+    let x = event.clientX - gridRect.left + 8;
+    let y = event.clientY - gridRect.top + 8;
+
+    const maxX = gridRect.width - popupWidth - 8;
+    const maxY = gridRect.height - popupHeight - 8;
+
+    x = Math.max(8, Math.min(x, maxX));
+    y = Math.max(8, Math.min(y, maxY));
+
+    setSelectedBlockId(blockId);
+    setPopupPosition({ x, y });
   }
 
   function handleSplitChunk() {
@@ -377,6 +433,7 @@ export default function ScheduleGrid({
     });
 
     setSelectedBlockId(splitResult.newBlock.id);
+    setPopupPosition(null);
   }
 
   return (
@@ -455,6 +512,7 @@ export default function ScheduleGrid({
         </div>
 
         <div
+          ref={gridRef}
           className="pointer-events-none relative -mt-[1536px] grid min-w-[900px]"
           style={{
             gridTemplateColumns: `80px repeat(${numberOfDays}, minmax(140px, 1fr))`,
@@ -478,41 +536,37 @@ export default function ScheduleGrid({
               >
                 {dayBlocks.map((block) => {
                   const isSelected = block.id === selectedBlockId;
+                  const blockHeight = getBlockHeight(block);
+                  const isCompact = blockHeight < 52;
+                  const isTiny = blockHeight < 34;
 
                   return (
                     <div
                       key={block.id}
-                      className={`pointer-events-auto absolute left-2 right-2 rounded-xl border px-3 py-2 text-white shadow-lg cursor-pointer ${block.colorClass} ${
+                      className={`pointer-events-auto absolute left-2 right-2 cursor-pointer overflow-hidden rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass} ${
                         isSelected ? "ring-2 ring-white" : ""
                       }`}
                       style={{
                         top: `${getBlockTop(block)}px`,
-                        height: `${getBlockHeight(block)}px`,
+                        height: `${blockHeight}px`,
                       }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectBlock(block.id);
-                      }}
+                      onClick={(e) => handleSelectBlock(e, block.id)}
                     >
-                      <div className="text-xs font-medium text-white/90">
+                      <div
+                        className={`overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-white/90 ${
+                          isTiny ? "leading-tight" : ""
+                        }`}
+                      >
                         {formatBlockTime(block)}
                       </div>
-                      <div className="mt-1 text-sm font-semibold leading-tight">
-                        {block.title}
-                      </div>
 
-                      {isSelected && (
-                        <div className="absolute left-1/2 top-full z-30 mt-2 w-36 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSplitChunk();
-                            }}
-                            className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
-                          >
-                            Split Chunk
-                          </button>
+                      {!isTiny && (
+                        <div
+                          className={`mt-1 overflow-hidden text-ellipsis font-semibold leading-tight ${
+                            isCompact ? "whitespace-nowrap text-xs" : "text-sm"
+                          }`}
+                        >
+                          {block.title}
                         </div>
                       )}
                     </div>
@@ -521,6 +575,41 @@ export default function ScheduleGrid({
               </div>
             );
           })}
+
+          {selectedBlock && popupPosition && (
+            <div
+              ref={popupRef}
+              className="pointer-events-auto absolute z-40 w-36 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
+              style={{
+                left: `${popupPosition.x}px`,
+                top: `${popupPosition.y}px`,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-2 truncate text-xs font-medium text-zinc-400">
+                {selectedBlock.title}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSplitChunk}
+                className="mb-2 w-full rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
+              >
+                Split Chunk
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBlockId(null);
+                  setPopupPosition(null);
+                }}
+                className="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
+              >
+                Close
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
