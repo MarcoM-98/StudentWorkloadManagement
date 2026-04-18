@@ -6,6 +6,19 @@ type ScheduleGridProps = {
   numberOfDays?: number;
 };
 
+type ScheduleBlock = {
+  id: string;
+  title: string;
+  dayOffset: number;
+  startHour: number;
+  startMinute: number;
+  durationMinutes: number;
+  colorClass: string;
+};
+
+const HOUR_HEIGHT = 64;
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
+
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -41,12 +54,100 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 
+function getBlockTop(block: ScheduleBlock) {
+  return (block.startHour * 60 + block.startMinute) * MINUTE_HEIGHT;
+}
+
+function getBlockHeight(block: ScheduleBlock) {
+  return Math.max(block.durationMinutes * MINUTE_HEIGHT, 24);
+}
+
+function formatBlockTime(block: ScheduleBlock) {
+  const startTotal = block.startHour * 60 + block.startMinute;
+  const endTotal = startTotal + block.durationMinutes;
+
+  const startHour24 = Math.floor(startTotal / 60);
+  const startMinutes = startTotal % 60;
+  const endHour24 = Math.floor(endTotal / 60);
+  const endMinutes = endTotal % 60;
+
+  return `${formatSingleTime(startHour24, startMinutes)} - ${formatSingleTime(
+    endHour24,
+    endMinutes
+  )}`;
+}
+
+function formatSingleTime(hour24: number, minutes: number) {
+  const normalizedHour = hour24 % 24;
+  const suffix = normalizedHour >= 12 ? "PM" : "AM";
+  const hour12 =
+    normalizedHour === 0 ? 12 : normalizedHour > 12 ? normalizedHour - 12 : normalizedHour;
+
+  if (minutes === 0) {
+    return `${hour12} ${suffix}`;
+  }
+
+  return `${hour12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
+function buildSampleBlocks(): ScheduleBlock[] {
+  return [
+    {
+      id: "block-1",
+      title: "Read Chapter 5",
+      dayOffset: 0,
+      startHour: 9,
+      startMinute: 0,
+      durationMinutes: 60,
+      colorClass: "bg-blue-500/90 border-blue-300",
+    },
+    {
+      id: "block-2",
+      title: "Homework 1",
+      dayOffset: 0,
+      startHour: 18,
+      startMinute: 30,
+      durationMinutes: 90,
+      colorClass: "bg-emerald-500/90 border-emerald-300",
+    },
+    {
+      id: "block-3",
+      title: "Quiz Review",
+      dayOffset: 1,
+      startHour: 14,
+      startMinute: 0,
+      durationMinutes: 45,
+      colorClass: "bg-violet-500/90 border-violet-300",
+    },
+    {
+      id: "block-4",
+      title: "Lab Writeup",
+      dayOffset: 2,
+      startHour: 10,
+      startMinute: 30,
+      durationMinutes: 120,
+      colorClass: "bg-amber-500/90 border-amber-300",
+    },
+    {
+      id: "block-5",
+      title: "Project Planning",
+      dayOffset: 4,
+      startHour: 19,
+      startMinute: 0,
+      durationMinutes: 60,
+      colorClass: "bg-rose-500/90 border-rose-300",
+    },
+  ];
+}
+
 function HourRow({
   hour,
-  numberOfDays,
+  days,
+  today,
 }: {
   hour: number;
-  numberOfDays: number;
+  days: Date[];
+  today: Date;
 }) {
   return (
     <>
@@ -54,14 +155,20 @@ function HourRow({
         {formatHourLabel(hour)}
       </div>
 
-      {Array.from({ length: numberOfDays }, (_, index) => (
-        <div
-          key={`${hour}-${index}`}
-          className="relative h-16 border-b border-r border-zinc-800 bg-zinc-900/40"
-        >
-          <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-zinc-800/70" />
-        </div>
-      ))}
+      {days.map((day) => {
+        const isTodayColumn = isSameDay(day, today);
+
+        return (
+          <div
+            key={`${day.toISOString()}-${hour}`}
+            className={`relative h-16 border-b border-r border-zinc-800 ${
+              isTodayColumn ? "bg-zinc-900/70" : "bg-zinc-900/40"
+            }`}
+          >
+            <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-zinc-800/70" />
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -84,6 +191,7 @@ export default function ScheduleGrid({
   );
 
   const hours = Array.from({ length: 24 }, (_, index) => index);
+  const sampleBlocks = useMemo(() => buildSampleBlocks(), []);
 
   function handlePrevious() {
     setDayOffset((prev) => prev - 1);
@@ -144,18 +252,18 @@ export default function ScheduleGrid({
           <div className="sticky top-0 z-20 border-b border-r border-zinc-800 bg-zinc-950" />
 
           {days.map((day) => {
-            const isToday = isSameDay(day, today);
+            const isTodayColumn = isSameDay(day, today);
 
             return (
               <div
                 key={day.toISOString()}
                 className={`sticky top-0 z-10 border-b border-r border-zinc-800 px-4 py-3 text-center ${
-                  isToday ? "bg-zinc-900" : "bg-zinc-950"
+                  isTodayColumn ? "bg-zinc-900" : "bg-zinc-950"
                 }`}
               >
                 <div
                   className={`text-xs font-medium ${
-                    isToday ? "text-blue-400" : "text-zinc-400"
+                    isTodayColumn ? "text-blue-400" : "text-zinc-400"
                   }`}
                 >
                   {formatHeaderDay(day)}
@@ -171,9 +279,54 @@ export default function ScheduleGrid({
             <HourRow
               key={hour}
               hour={hour}
-              numberOfDays={numberOfDays}
+              days={days}
+              today={today}
             />
           ))}
+        </div>
+
+        <div
+          className="pointer-events-none relative -mt-[1536px] grid min-w-[900px]"
+          style={{
+            gridTemplateColumns: `80px repeat(${numberOfDays}, minmax(140px, 1fr))`,
+            height: `${24 * HOUR_HEIGHT}px`,
+          }}
+        >
+          <div />
+
+          {days.map((day, columnIndex) => {
+            const dayBlocks = sampleBlocks.filter(
+              (block) => block.dayOffset === dayOffset + columnIndex
+            );
+            const isTodayColumn = isSameDay(day, today);
+
+            return (
+              <div
+                key={`${day.toISOString()}-overlay`}
+                className={`relative border-r border-zinc-800 ${
+                  isTodayColumn ? "bg-blue-500/5" : ""
+                }`}
+              >
+                {dayBlocks.map((block) => (
+                  <div
+                    key={block.id}
+                    className={`pointer-events-auto absolute left-2 right-2 rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass}`}
+                    style={{
+                      top: `${getBlockTop(block)}px`,
+                      height: `${getBlockHeight(block)}px`,
+                    }}
+                  >
+                    <div className="text-xs font-medium text-white/90">
+                      {formatBlockTime(block)}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold leading-tight">
+                      {block.title}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
