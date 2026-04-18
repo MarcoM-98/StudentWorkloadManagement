@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
+type CalendarTask = {
+  _id: string;
+  title: string;
+  dueDate: string;
+  duration: number;
+};
+
 type ScheduleGridProps = {
+  tasks: CalendarTask[];
   numberOfDays?: number;
 };
 
@@ -21,6 +29,39 @@ const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseLocalDate(dateString: string) {
+  if (!dateString) return null;
+
+  const trimmed = String(dateString).trim();
+
+  // Handle ISO string like 2026-04-18T05:00:00.000Z
+  if (trimmed.includes("T")) {
+    const datePart = trimmed.split("T")[0];
+    const [year, month, day] = datePart.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  // Handle YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  // Handle MM/DD/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+    const [month, day, year] = trimmed.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return null;
+}
+
+function getDayDifference(startDate: Date, endDate: Date) {
+  const start = getLocalStartOfDay(startDate).getTime();
+  const end = getLocalStartOfDay(endDate).getTime();
+  return Math.round((end - start) / (1000 * 60 * 60 * 24));
 }
 
 function formatHeaderDate(date: Date) {
@@ -62,21 +103,6 @@ function getBlockHeight(block: ScheduleBlock) {
   return Math.max(block.durationMinutes * MINUTE_HEIGHT, 24);
 }
 
-function formatBlockTime(block: ScheduleBlock) {
-  const startTotal = block.startHour * 60 + block.startMinute;
-  const endTotal = startTotal + block.durationMinutes;
-
-  const startHour24 = Math.floor(startTotal / 60);
-  const startMinutes = startTotal % 60;
-  const endHour24 = Math.floor(endTotal / 60);
-  const endMinutes = endTotal % 60;
-
-  return `${formatSingleTime(startHour24, startMinutes)} - ${formatSingleTime(
-    endHour24,
-    endMinutes
-  )}`;
-}
-
 function formatSingleTime(hour24: number, minutes: number) {
   const normalizedHour = hour24 % 24;
   const suffix = normalizedHour >= 12 ? "PM" : "AM";
@@ -90,54 +116,87 @@ function formatSingleTime(hour24: number, minutes: number) {
   return `${hour12}:${String(minutes).padStart(2, "0")} ${suffix}`;
 }
 
-function buildSampleBlocks(): ScheduleBlock[] {
-  return [
-    {
-      id: "block-1",
-      title: "Read Chapter 5",
-      dayOffset: 0,
-      startHour: 9,
-      startMinute: 0,
-      durationMinutes: 60,
-      colorClass: "bg-blue-500/90 border-blue-300",
-    },
-    {
-      id: "block-2",
-      title: "Homework 1",
-      dayOffset: 0,
-      startHour: 18,
-      startMinute: 30,
-      durationMinutes: 90,
-      colorClass: "bg-emerald-500/90 border-emerald-300",
-    },
-    {
-      id: "block-3",
-      title: "Quiz Review",
-      dayOffset: 1,
-      startHour: 14,
-      startMinute: 0,
-      durationMinutes: 45,
-      colorClass: "bg-violet-500/90 border-violet-300",
-    },
-    {
-      id: "block-4",
-      title: "Lab Writeup",
-      dayOffset: 2,
-      startHour: 10,
-      startMinute: 30,
-      durationMinutes: 120,
-      colorClass: "bg-amber-500/90 border-amber-300",
-    },
-    {
-      id: "block-5",
-      title: "Project Planning",
-      dayOffset: 4,
-      startHour: 19,
-      startMinute: 0,
-      durationMinutes: 60,
-      colorClass: "bg-rose-500/90 border-rose-300",
-    },
+function formatBlockTime(block: ScheduleBlock) {
+  const startTotalMinutes = block.startHour * 60 + block.startMinute;
+  const endTotalMinutes = startTotalMinutes + block.durationMinutes;
+
+  const startHour = Math.floor(startTotalMinutes / 60);
+  const startMinutes = startTotalMinutes % 60;
+  const endHour = Math.floor(endTotalMinutes / 60);
+  const endMinutes = endTotalMinutes % 60;
+
+  return `${formatSingleTime(startHour, startMinutes)} - ${formatSingleTime(
+    endHour,
+    endMinutes
+  )}`;
+}
+
+function getColorClass(index: number) {
+  const colors = [
+    "bg-blue-500/90 border-blue-300",
+    "bg-emerald-500/90 border-emerald-300",
+    "bg-violet-500/90 border-violet-300",
+    "bg-amber-500/90 border-amber-300",
+    "bg-rose-500/90 border-rose-300",
+    "bg-cyan-500/90 border-cyan-300",
   ];
+
+  return colors[index % colors.length];
+}
+
+function mapTasksToScheduleBlocks(
+  tasks: CalendarTask[],
+  visibleStartDate: Date,
+  numberOfDays: number
+): ScheduleBlock[] {
+  const visibleEndDate = new Date(visibleStartDate);
+  visibleEndDate.setDate(visibleStartDate.getDate() + numberOfDays - 1);
+
+  const blocks: ScheduleBlock[] = [];
+  const blocksPerDay: Record<number, number> = {};
+
+  tasks.forEach((task, index) => {
+    const taskDate = parseLocalDate(task.dueDate);
+
+    console.log("GRID TASK:", {
+      title: task.title,
+      dueDate: task.dueDate,
+      parsedDate: taskDate,
+      duration: task.duration,
+    });
+
+    if (!taskDate) return;
+
+    if (taskDate < visibleStartDate || taskDate > visibleEndDate) {
+      return;
+    }
+
+    const dayOffset = getDayDifference(visibleStartDate, taskDate);
+
+    if (dayOffset < 0 || dayOffset >= numberOfDays) {
+      return;
+    }
+
+    const existingCountForDay = blocksPerDay[dayOffset] || 0;
+
+    // temporary placement rule
+    const startHour = 18 + existingCountForDay;
+    const startMinute = 0;
+
+    blocks.push({
+      id: task._id,
+      title: task.title,
+      dayOffset,
+      startHour,
+      startMinute,
+      durationMinutes: Math.max(task.duration || 0, 30),
+      colorClass: getColorClass(index),
+    });
+
+    blocksPerDay[dayOffset] = existingCountForDay + 1;
+  });
+
+  return blocks;
 }
 
 function HourRow({
@@ -174,6 +233,7 @@ function HourRow({
 }
 
 export default function ScheduleGrid({
+  tasks,
   numberOfDays = 7,
 }: ScheduleGridProps) {
   const today = useMemo(() => getLocalStartOfDay(new Date()), []);
@@ -191,7 +251,11 @@ export default function ScheduleGrid({
   );
 
   const hours = Array.from({ length: 24 }, (_, index) => index);
-  const sampleBlocks = useMemo(() => buildSampleBlocks(), []);
+
+  const scheduleBlocks = useMemo(
+    () => mapTasksToScheduleBlocks(tasks, visibleStartDate, numberOfDays),
+    [tasks, visibleStartDate, numberOfDays]
+  );
 
   function handlePrevious() {
     setDayOffset((prev) => prev - 1);
@@ -276,12 +340,7 @@ export default function ScheduleGrid({
           })}
 
           {hours.map((hour) => (
-            <HourRow
-              key={hour}
-              hour={hour}
-              days={days}
-              today={today}
-            />
+            <HourRow key={hour} hour={hour} days={days} today={today} />
           ))}
         </div>
 
@@ -295,8 +354,8 @@ export default function ScheduleGrid({
           <div />
 
           {days.map((day, columnIndex) => {
-            const dayBlocks = sampleBlocks.filter(
-              (block) => block.dayOffset === dayOffset + columnIndex
+            const dayBlocks = scheduleBlocks.filter(
+              (block) => block.dayOffset === columnIndex
             );
             const isTodayColumn = isSameDay(day, today);
 
