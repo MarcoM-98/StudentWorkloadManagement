@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ScheduleBlockCard from "@/components/ScheduleBlockCard";
 import ScheduleConflictPopup from "@/components/ScheduleConflictPopup";
 import {
   formatDateKey,
@@ -672,45 +673,19 @@ export default function ScheduleGrid({
                   isTodayColumn ? "bg-blue-500/5" : ""
                 }`}
               >
-                {dayBlocks.map((block) => {
-                  const isSelected = block.id === selectedBlockId;
-                  const blockHeight = getBlockHeight(block);
-                  const isCompact = blockHeight < 52;
-                  const isTiny = blockHeight < 34;
-
-                  return (
-                    <div
-                      key={block.id}
-                      className={`pointer-events-auto absolute left-2 right-2 cursor-grab overflow-hidden rounded-xl border px-3 py-2 text-white shadow-lg ${block.colorClass} ${
-                        isSelected ? "ring-2 ring-white" : ""
-                      } ${dragState?.blockId === block.id ? "cursor-grabbing opacity-90" : ""}`}
-                      style={{
-                        top: `${getBlockTop(block)}px`,
-                        height: `${blockHeight}px`,
-                      }}
-                      onClick={(e) => handleSelectBlock(e, block.id)}
-                      onMouseDown={(e) => handleBlockMouseDown(e, block)}
-                    >
-                      <div
-                        className={`overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-white/90 ${
-                          isTiny ? "leading-tight" : ""
-                        }`}
-                      >
-                        {formatBlockTime(block)}
-                      </div>
-
-                      {!isTiny && (
-                        <div
-                          className={`mt-1 overflow-hidden text-ellipsis font-semibold leading-tight ${
-                            isCompact ? "whitespace-nowrap text-xs" : "text-sm"
-                          }`}
-                        >
-                          {block.title}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {dayBlocks.map((block) => (
+                  <ScheduleBlockCard
+                    key={block.id}
+                    block={block}
+                    isSelected={block.id === selectedBlockId}
+                    isDragging={dragState?.blockId === block.id}
+                    top={getBlockTop(block)}
+                    height={getBlockHeight(block)}
+                    timeLabel={formatBlockTime(block)}
+                    onSelect={(e) => handleSelectBlock(e, block.id)}
+                    onDragStart={(e) => handleBlockMouseDown(e, block)}
+                  />
+                ))}
               </div>
             );
           })}
