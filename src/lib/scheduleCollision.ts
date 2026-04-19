@@ -22,6 +22,10 @@ export type PendingConflict = {
   };
 };
 
+const MINUTES_PER_DAY = 24 * 60;
+const NEXT_WORK_START_MINUTES = 6 * 60; // 6:00 AM
+const WORK_DAY_END_MINUTES = 24 * 60;
+
 export function parseLocalDate(dateString: string) {
   if (!dateString) return null;
 
@@ -72,23 +76,51 @@ export function blockOverlaps(a: ScheduleBlock, b: ScheduleBlock) {
   return aStart < bEnd && bStart < aEnd;
 }
 
+function normalizeStartToDayWindow(
+  baseDate: Date,
+  totalMinutes: number,
+  durationMinutes: number
+) {
+  const nextDate = new Date(baseDate);
+  let startMinutes = Math.max(0, totalMinutes);
+
+  while (
+    durationMinutes < MINUTES_PER_DAY &&
+    startMinutes + durationMinutes > MINUTES_PER_DAY
+  ) {
+    nextDate.setDate(nextDate.getDate() + 1);
+    startMinutes = NEXT_WORK_START_MINUTES;
+  }
+
+  return {
+    nextDate,
+    startMinutes,
+  };
+}
+
 export function setBlockStartFromDateAndMinutes(
   block: ScheduleBlock,
   baseDate: Date,
   totalMinutes: number
 ) {
   const safeMinutes = Math.max(0, totalMinutes);
-  const extraDays = Math.floor(safeMinutes / (24 * 60));
-  const remainingMinutes = safeMinutes % (24 * 60);
+  const extraDays = Math.floor(safeMinutes / MINUTES_PER_DAY);
+  const remainingMinutes = safeMinutes % MINUTES_PER_DAY;
 
   const nextDate = new Date(baseDate);
   nextDate.setDate(nextDate.getDate() + extraDays);
 
+  const normalized = normalizeStartToDayWindow(
+    nextDate,
+    remainingMinutes,
+    block.durationMinutes
+  );
+
   return {
     ...block,
-    blockDate: formatDateKey(nextDate),
-    startHour: Math.floor(remainingMinutes / 60),
-    startMinute: remainingMinutes % 60,
+    blockDate: formatDateKey(normalized.nextDate),
+    startHour: Math.floor(normalized.startMinutes / 60),
+    startMinute: normalized.startMinutes % 60,
     isManuallyPlaced: true,
   };
 }
@@ -111,13 +143,25 @@ export function resolveForcePlace(
     return allBlocks;
   }
 
-  const proposedStart = getBlockStartMinutes(proposedBlock);
-  const proposedEnd = getBlockEndMinutes(proposedBlock);
+  const normalizedProposed = setBlockStartFromDateAndMinutes(
+    proposedBlock,
+    proposedDate,
+    getBlockStartMinutes(proposedBlock)
+  );
+
+  const normalizedProposedDate = parseLocalDate(normalizedProposed.blockDate);
+  if (!normalizedProposedDate) {
+    return allBlocks;
+  }
+
+  const proposedStart = getBlockStartMinutes(normalizedProposed);
+  const proposedEnd = getBlockEndMinutes(normalizedProposed);
 
   const blocksOnSameDay = allBlocks
     .filter(
       (block) =>
-        block.id !== proposedBlock.id && block.blockDate === proposedBlock.blockDate
+        block.id !== normalizedProposed.id &&
+        block.blockDate === normalizedProposed.blockDate
     )
     .sort((a, b) => getBlockStartMinutes(a) - getBlockStartMinutes(b));
 
@@ -132,8 +176,12 @@ export function resolveForcePlace(
     }
 
     if (blockStart < currentEnd) {
-      const moved = setBlockStartFromDateAndMinutes(block, proposedDate, currentEnd);
-      currentEnd += block.durationMinutes;
+      const moved = setBlockStartFromDateAndMinutes(
+        block,
+        normalizedProposedDate,
+        currentEnd
+      );
+      currentEnd = getBlockEndMinutes(moved);
       return moved;
     }
 
@@ -143,15 +191,81 @@ export function resolveForcePlace(
   const forcedMap = new Map(forcedBlocks.map((block) => [block.id, block]));
 
   return allBlocks.map((block) => {
-    if (block.id === proposedBlock.id) {
+    if (block.id === normalizedProposed.id) {
       return {
-        ...proposedBlock,
+        ...normalizedProposed,
         isManuallyPlaced: true,
       };
     }
 
     return forcedMap.get(block.id) || block;
   });
+}
+
+function buildChunkFromPlacement(
+  source: ScheduleBlock,
+  id: string,
+  blockDate: string,
+  startMinutes: number,
+  durationMinutes: number,
+  chunkIndex: number
+): ScheduleBlock {
+  return {
+    ...source,
+    id,
+    blockDate,
+    startHour: Math.floor(startMinutes / 60),
+    startMinute: startMinutes % 60,
+    durationMinutes,
+    chunkIndex,
+    isManuallyPlaced: true,
+  };
+}
+
+function getBlocksOnDate(allBlocks: ScheduleBlock[], blockDate: string) {
+  return allBlocks
+    .filter((block) => block.blockDate === blockDate)
+    .sort((a, b) => getBlockStartMinutes(a) - getBlockStartMinutes(b));
+}
+
+function getForwardChainEnd(
+  allBlocks: ScheduleBlock[],
+  proposedBlock: ScheduleBlock
+) {
+  const sameDayBlocks = getBlocksOnDate(allBlocks, proposedBlock.blockDate).filter(
+    (block) => block.id !== proposedBlock.id
+  );
+
+  const proposedStart = getBlockStartMinutes(proposedBlock);
+  let chainEnd = proposedStart;
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (const block of sameDayBlocks) {
+      const blockStart = getBlockStartMinutes(block);
+      const blockEnd = getBlockEndMinutes(block);
+
+      // If this block overlaps or touches the current forward chain,
+      // extend the chain end to include it.
+      if (blockStart <= chainEnd && blockEnd > chainEnd) {
+        chainEnd = blockEnd;
+        changed = true;
+      }
+
+      // Also include blocks that directly overlap the proposed start area
+      if (
+        blockStart < proposedStart + proposedBlock.durationMinutes &&
+        blockEnd > chainEnd
+      ) {
+        chainEnd = Math.max(chainEnd, blockEnd);
+        changed = true;
+      }
+    }
+  }
+
+  return chainEnd;
 }
 
 export function resolveFitAtEnd(
@@ -163,38 +277,103 @@ export function resolveFitAtEnd(
     return allBlocks;
   }
 
-  const duration = proposedBlock.durationMinutes;
-  const dayBlocks = allBlocks
-    .filter(
-      (block) =>
-        block.id !== proposedBlock.id && block.blockDate === proposedBlock.blockDate
-    )
-    .sort((a, b) => getBlockStartMinutes(a) - getBlockStartMinutes(b));
+  const blocksWithoutProposed = allBlocks.filter(
+    (block) => block.id !== proposedBlock.id
+  );
 
-  let candidateStart = getBlockStartMinutes(proposedBlock);
+  const forwardStart = getForwardChainEnd(blocksWithoutProposed, proposedBlock);
 
-  for (const block of dayBlocks) {
-    const blockStart = getBlockStartMinutes(block);
-    const blockEnd = getBlockEndMinutes(block);
+  let remainingMinutes = proposedBlock.durationMinutes;
+  let searchDate = new Date(baseDate);
+  let cursor = forwardStart;
 
-    if (candidateStart + duration <= blockStart) {
-      break;
+  const newChunks: ScheduleBlock[] = [];
+  let nextChunkIndex = proposedBlock.chunkIndex;
+  let firstChunkUsedOriginalId = false;
+
+  while (remainingMinutes > 0) {
+    const dateKey = formatDateKey(searchDate);
+    const dayBlocks = getBlocksOnDate(blocksWithoutProposed, dateKey);
+
+    // first day starts at the forward chain end
+    // next days start at 6:00 AM
+    if (dateKey !== proposedBlock.blockDate) {
+      cursor = NEXT_WORK_START_MINUTES;
     }
 
-    if (candidateStart < blockEnd) {
-      candidateStart = blockEnd;
+    for (const block of dayBlocks) {
+      const blockStart = getBlockStartMinutes(block);
+      const blockEnd = getBlockEndMinutes(block);
+
+      if (blockEnd <= cursor) {
+        continue;
+      }
+
+      if (blockStart > cursor) {
+        const availableMinutes = blockStart - cursor;
+        const chunkMinutes = Math.min(remainingMinutes, availableMinutes);
+
+        if (chunkMinutes > 0) {
+          const chunkId = firstChunkUsedOriginalId
+            ? `${proposedBlock.assignmentId}-chunk-${Date.now()}-${nextChunkIndex}`
+            : proposedBlock.id;
+
+          const chunk = buildChunkFromPlacement(
+            proposedBlock,
+            chunkId,
+            dateKey,
+            cursor,
+            chunkMinutes,
+            nextChunkIndex
+          );
+
+          newChunks.push(chunk);
+          remainingMinutes -= chunkMinutes;
+          nextChunkIndex += 1;
+          firstChunkUsedOriginalId = true;
+          cursor += chunkMinutes;
+
+          if (remainingMinutes <= 0) {
+            break;
+          }
+        }
+      }
+
+      if (blockStart <= cursor && blockEnd > cursor) {
+        cursor = blockEnd;
+      }
+    }
+
+    if (remainingMinutes > 0 && cursor < WORK_DAY_END_MINUTES) {
+      const availableMinutes = WORK_DAY_END_MINUTES - cursor;
+      const chunkMinutes = Math.min(remainingMinutes, availableMinutes);
+
+      if (chunkMinutes > 0) {
+        const chunkId = firstChunkUsedOriginalId
+          ? `${proposedBlock.assignmentId}-chunk-${Date.now()}-${nextChunkIndex}`
+          : proposedBlock.id;
+
+        const chunk = buildChunkFromPlacement(
+          proposedBlock,
+          chunkId,
+          dateKey,
+          cursor,
+          chunkMinutes,
+          nextChunkIndex
+        );
+
+        newChunks.push(chunk);
+        remainingMinutes -= chunkMinutes;
+        nextChunkIndex += 1;
+        firstChunkUsedOriginalId = true;
+      }
+    }
+
+    if (remainingMinutes > 0) {
+      searchDate.setDate(searchDate.getDate() + 1);
+      cursor = NEXT_WORK_START_MINUTES;
     }
   }
 
-  const fittedBlock = setBlockStartFromDateAndMinutes(
-    proposedBlock,
-    baseDate,
-    candidateStart
-  );
-
-  return allBlocks.map((block) =>
-    block.id === proposedBlock.id
-      ? { ...fittedBlock, isManuallyPlaced: true }
-      : block
-  );
+  return [...blocksWithoutProposed, ...newChunks];
 }
