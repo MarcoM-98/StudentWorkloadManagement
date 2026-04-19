@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ScheduleConflictPopup from "@/components/ScheduleConflictPopup";
+import {
+  formatDateKey,
+  getConflictingBlocks,
+  parseLocalDate,
+  resolveFitAtEnd,
+  resolveForcePlace,
+  type PendingConflict,
+  type ScheduleBlock,
+} from "@/lib/scheduleCollision";
 
 type CalendarTask = {
   _id: string;
@@ -12,19 +22,6 @@ type CalendarTask = {
 type ScheduleGridProps = {
   tasks: CalendarTask[];
   numberOfDays?: number;
-};
-
-type ScheduleBlock = {
-  id: string;
-  assignmentId: string;
-  title: string;
-  blockDate: string; // YYYY-MM-DD
-  startHour: number;
-  startMinute: number;
-  durationMinutes: number;
-  colorClass: string;
-  chunkIndex: number;
-  isManuallyPlaced: boolean;
 };
 
 type PopupPosition = {
@@ -41,41 +38,9 @@ const HOUR_HEIGHT = 64;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 const TOTAL_DAY_HEIGHT = 24 * HOUR_HEIGHT;
 const TIME_LABEL_WIDTH = 80;
-const COLUMN_MIN_WIDTH = 140;
 
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function formatDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function parseLocalDate(dateString: string) {
-  if (!dateString) return null;
-
-  const trimmed = String(dateString).trim();
-
-  if (trimmed.includes("T")) {
-    const datePart = trimmed.split("T")[0];
-    const [year, month, day] = datePart.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const [year, month, day] = trimmed.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
-    const [month, day, year] = trimmed.split("/").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  return null;
 }
 
 function getDayDifference(startDate: Date, endDate: Date) {
@@ -121,6 +86,10 @@ function getBlockTop(block: ScheduleBlock) {
 
 function getBlockHeight(block: ScheduleBlock) {
   return Math.max(block.durationMinutes * MINUTE_HEIGHT, 24);
+}
+
+function getBlockStartMinutes(block: ScheduleBlock) {
+  return block.startHour * 60 + block.startMinute;
 }
 
 function formatSingleTime(hour24: number, minutes: number) {
@@ -281,6 +250,9 @@ export default function ScheduleGrid({
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(
+    null
+  );
 
   const popupRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -319,6 +291,7 @@ export default function ScheduleGrid({
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
       if (popupRef.current?.contains(target)) return;
+      if (pendingConflict) return;
 
       setSelectedBlockId(null);
       setPopupPosition(null);
@@ -331,7 +304,7 @@ export default function ScheduleGrid({
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [selectedBlockId, dragState]);
+  }, [selectedBlockId, dragState, pendingConflict]);
 
   useEffect(() => {
     function handlePointerMove(event: MouseEvent) {
@@ -371,8 +344,47 @@ export default function ScheduleGrid({
       );
     }
 
-    function handlePointerUp() {
-      if (!dragState) return;
+    function handlePointerUp(event: MouseEvent) {
+      if (!dragState || !overlayRef.current) return;
+
+      const proposedBlock = scheduleBlocks.find(
+        (block) => block.id === dragState.blockId
+      );
+      if (!proposedBlock) {
+        setDragState(null);
+        return;
+      }
+
+      const startingBlock =
+        scheduleBlocks.find((block) => block.id === dragState.blockId) || proposedBlock;
+
+      const allOtherBlocks = scheduleBlocks.filter(
+        (block) => block.id !== dragState.blockId
+      );
+
+      const conflicts = getConflictingBlocks(allOtherBlocks, proposedBlock);
+
+      const overlayRect = overlayRef.current.getBoundingClientRect();
+      let popupX = event.clientX - overlayRect.left + 8;
+      let popupY = event.clientY - overlayRect.top + 8;
+
+      popupX = clamp(popupX, 8, overlayRect.width - 190);
+      popupY = clamp(popupY, 8, overlayRect.height - 150);
+
+      if (conflicts.length > 0) {
+        setPendingConflict({
+          blockId: proposedBlock.id,
+          originalBlock: { ...startingBlock },
+          proposedBlock: { ...proposedBlock },
+          conflictBlockIds: conflicts.map((block) => block.id),
+          popupPosition: { x: popupX, y: popupY },
+        });
+        setSelectedBlockId(null);
+        setPopupPosition(null);
+      } else {
+        setPendingConflict(null);
+      }
+
       setDragState(null);
     }
 
@@ -385,7 +397,7 @@ export default function ScheduleGrid({
       window.removeEventListener("mousemove", handlePointerMove);
       window.removeEventListener("mouseup", handlePointerUp);
     };
-  }, [dragState, numberOfDays, visibleStartDate]);
+  }, [dragState, numberOfDays, visibleStartDate, scheduleBlocks]);
 
   const selectedBlock = useMemo(
     () => scheduleBlocks.find((block) => block.id === selectedBlockId) || null,
@@ -395,18 +407,21 @@ export default function ScheduleGrid({
   function handlePrevious() {
     setSelectedBlockId(null);
     setPopupPosition(null);
+    setPendingConflict(null);
     setDayOffset((prev) => prev - 1);
   }
 
   function handleNext() {
     setSelectedBlockId(null);
     setPopupPosition(null);
+    setPendingConflict(null);
     setDayOffset((prev) => prev + 1);
   }
 
   function handleToday() {
     setSelectedBlockId(null);
     setPopupPosition(null);
+    setPendingConflict(null);
     setDayOffset(0);
   }
 
@@ -423,18 +438,19 @@ export default function ScheduleGrid({
     }
 
     const overlayRect = overlayRef.current.getBoundingClientRect();
-    const popupWidth = 170;
-    const popupHeight = 92;
+    const menuWidth = 170;
+    const menuHeight = 92;
 
     let x = event.clientX - overlayRect.left + 8;
     let y = event.clientY - overlayRect.top + 8;
 
-    const maxX = overlayRect.width - popupWidth - 8;
-    const maxY = overlayRect.height - popupHeight - 8;
+    const maxX = overlayRect.width - menuWidth - 8;
+    const maxY = overlayRect.height - menuHeight - 8;
 
     x = Math.max(8, Math.min(x, maxX));
     y = Math.max(8, Math.min(y, maxY));
 
+    setPendingConflict(null);
     setSelectedBlockId(blockId);
     setPopupPosition({ x, y });
   }
@@ -449,6 +465,7 @@ export default function ScheduleGrid({
     const blockRect = event.currentTarget.getBoundingClientRect();
     const pointerOffsetY = event.clientY - blockRect.top;
 
+    setPendingConflict(null);
     setSelectedBlockId(block.id);
     setPopupPosition(null);
     setDragState({
@@ -498,6 +515,38 @@ export default function ScheduleGrid({
 
     setSelectedBlockId(splitResult.newBlock.id);
     setPopupPosition(null);
+  }
+
+  function handleCancelConflict() {
+    if (!pendingConflict) return;
+
+    setScheduleBlocks((prev) =>
+      prev.map((block) =>
+        block.id === pendingConflict.blockId ? pendingConflict.originalBlock : block
+      )
+    );
+
+    setPendingConflict(null);
+  }
+
+  function handleForcePlace() {
+    if (!pendingConflict) return;
+
+    setScheduleBlocks((prev) =>
+      resolveForcePlace(prev, pendingConflict.proposedBlock)
+    );
+
+    setPendingConflict(null);
+  }
+
+  function handleFitAtEnd() {
+    if (!pendingConflict) return;
+
+    setScheduleBlocks((prev) =>
+      resolveFitAtEnd(prev, pendingConflict.proposedBlock)
+    );
+
+    setPendingConflict(null);
   }
 
   const visibleBlocks = useMemo(() => {
@@ -666,7 +715,7 @@ export default function ScheduleGrid({
             );
           })}
 
-          {selectedBlock && popupPosition && !dragState && (
+          {selectedBlock && popupPosition && !dragState && !pendingConflict && (
             <div
               ref={popupRef}
               className="pointer-events-auto absolute z-40 w-40 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
@@ -698,6 +747,17 @@ export default function ScheduleGrid({
               >
                 Close
               </button>
+            </div>
+          )}
+
+          {pendingConflict && (
+            <div ref={popupRef}>
+              <ScheduleConflictPopup
+                pendingConflict={pendingConflict}
+                onCancel={handleCancelConflict}
+                onForcePlace={handleForcePlace}
+                onFitAtEnd={handleFitAtEnd}
+              />
             </div>
           )}
         </div>
