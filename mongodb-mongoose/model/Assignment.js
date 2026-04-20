@@ -39,15 +39,29 @@ const assignmentSchema = new Schema(
             enum: ['low', 'medium', 'IMMEDIATE'],
         },
         customPercentage: {
-        type: Number, 
-        default: null,
-        min: 0,
-        max: 100
-    },
+            type: Number, 
+            default: null,
+            min: 0,
+            max: 100
+        },
         duration: {
              type: Number, 
              default: 0 },
+
+        courseCode: { 
+            type: String, 
+            default: "" 
+        }, // scraper will fill this
+        keywords: { 
+            type: [String], 
+            default: [] 
+        },
+        isActionable: { 
+            type: Boolean, 
+            default: true 
+        },
     },
+
     {
         timestamps: true, // creates createdAt and updatedAt automatically
         versionKey: false,
