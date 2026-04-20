@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import ScheduleBlockCard from "@/components/ScheduleBlockCard";
 import ScheduleConflictPopup from "@/components/ScheduleConflictPopup";
 import { type ScheduleBlock } from "@/lib/scheduleCollision";
@@ -25,12 +25,6 @@ const TIME_LABEL_WIDTH = 80;
 
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function getDayDifference(startDate: Date, endDate: Date) {
-  const start = getLocalStartOfDay(startDate).getTime();
-  const end = getLocalStartOfDay(endDate).getTime();
-  return Math.round((end - start) / (1000 * 60 * 60 * 24));
 }
 
 function formatHeaderDate(date: Date) {
@@ -139,9 +133,7 @@ export default function ScheduleGrid({
 }: ScheduleGridProps) {
   const today = useMemo(() => getLocalStartOfDay(new Date()), []);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const [dayOffset, setDayOffset] = useMemo(() => {
-    return [0, () => {}] as const;
-  }, []);
+  const [dayOffset, setDayOffset] = useState(0);
 
   const visibleStartDate = useMemo(() => {
     const date = new Date(today);
@@ -162,6 +154,7 @@ export default function ScheduleGrid({
     popupPosition,
     dragState,
     pendingConflict,
+    pendingCombine,
     selectedBlock,
     visibleBlocks,
     clearMenus,
@@ -171,6 +164,8 @@ export default function ScheduleGrid({
     handleCancelConflict,
     handleForcePlace,
     handleFitAtEnd,
+    handleCancelCombine,
+    handleConfirmCombine,
   } = useScheduleBlocks({
     tasks,
     numberOfDays,
@@ -182,17 +177,17 @@ export default function ScheduleGrid({
 
   function handlePrevious() {
     clearMenus();
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    setDayOffset((prev) => prev - 1);
   }
 
   function handleNext() {
     clearMenus();
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    setDayOffset((prev) => prev + 1);
   }
 
   function handleToday() {
     clearMenus();
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    setDayOffset(0);
   }
 
   return (
@@ -310,7 +305,7 @@ export default function ScheduleGrid({
             );
           })}
 
-          {selectedBlock && popupPosition && !dragState && !pendingConflict && (
+          {selectedBlock && popupPosition && !dragState && !pendingConflict && !pendingCombine && (
             <div
               ref={popupRef}
               className="pointer-events-auto absolute z-40 w-40 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
@@ -350,6 +345,42 @@ export default function ScheduleGrid({
                 onForcePlace={handleForcePlace}
                 onFitAtEnd={handleFitAtEnd}
               />
+            </div>
+          )}
+
+          {pendingCombine && (
+            <div
+              ref={popupRef}
+              className="pointer-events-auto absolute z-50 w-56 rounded-lg border border-blue-500/40 bg-zinc-950 p-3 shadow-xl"
+              style={{
+                left: `${pendingCombine.popupPosition.x}px`,
+                top: `${pendingCombine.popupPosition.y}px`,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-2 text-sm font-semibold text-blue-300">
+                Combine matching task chunks?
+              </div>
+
+              <div className="mb-3 text-xs text-zinc-400">
+                These blocks belong to the same assignment. Merge them into one chunk.
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCancelCombine}
+                className="mb-2 w-full rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmCombine}
+                className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+              >
+                Combine Chunks
+              </button>
             </div>
           )}
         </div>
