@@ -23,7 +23,7 @@ export type PendingConflict = {
 };
 
 const MINUTES_PER_DAY = 24 * 60;
-const NEXT_WORK_START_MINUTES = 6 * 60; // 6:00 AM
+const NEXT_WORK_START_MINUTES = 6 * 60;
 const WORK_DAY_END_MINUTES = 24 * 60;
 
 export function parseLocalDate(dateString: string) {
@@ -134,72 +134,31 @@ export function getConflictingBlocks(
   );
 }
 
-export function resolveForcePlace(
+export function resolveCombineChunks(
   allBlocks: ScheduleBlock[],
-  proposedBlock: ScheduleBlock
+  draggedBlock: ScheduleBlock,
+  targetBlock: ScheduleBlock
 ) {
-  const proposedDate = parseLocalDate(proposedBlock.blockDate);
-  if (!proposedDate) {
+  if (draggedBlock.assignmentId !== targetBlock.assignmentId) {
     return allBlocks;
   }
 
-  const normalizedProposed = setBlockStartFromDateAndMinutes(
-    proposedBlock,
-    proposedDate,
-    getBlockStartMinutes(proposedBlock)
+  if (draggedBlock.id === targetBlock.id) {
+    return allBlocks;
+  }
+
+  const remainingBlocks = allBlocks.filter(
+    (block) => block.id !== draggedBlock.id && block.id !== targetBlock.id
   );
 
-  const normalizedProposedDate = parseLocalDate(normalizedProposed.blockDate);
-  if (!normalizedProposedDate) {
-    return allBlocks;
-  }
+  const combinedBlock: ScheduleBlock = {
+    ...targetBlock,
+    durationMinutes:
+      targetBlock.durationMinutes + draggedBlock.durationMinutes,
+    isManuallyPlaced: true,
+  };
 
-  const proposedStart = getBlockStartMinutes(normalizedProposed);
-  const proposedEnd = getBlockEndMinutes(normalizedProposed);
-
-  const blocksOnSameDay = allBlocks
-    .filter(
-      (block) =>
-        block.id !== normalizedProposed.id &&
-        block.blockDate === normalizedProposed.blockDate
-    )
-    .sort((a, b) => getBlockStartMinutes(a) - getBlockStartMinutes(b));
-
-  let currentEnd = proposedEnd;
-
-  const forcedBlocks = blocksOnSameDay.map((block) => {
-    const blockStart = getBlockStartMinutes(block);
-    const blockEnd = getBlockEndMinutes(block);
-
-    if (blockEnd <= proposedStart) {
-      return block;
-    }
-
-    if (blockStart < currentEnd) {
-      const moved = setBlockStartFromDateAndMinutes(
-        block,
-        normalizedProposedDate,
-        currentEnd
-      );
-      currentEnd = getBlockEndMinutes(moved);
-      return moved;
-    }
-
-    return block;
-  });
-
-  const forcedMap = new Map(forcedBlocks.map((block) => [block.id, block]));
-
-  return allBlocks.map((block) => {
-    if (block.id === normalizedProposed.id) {
-      return {
-        ...normalizedProposed,
-        isManuallyPlaced: true,
-      };
-    }
-
-    return forcedMap.get(block.id) || block;
-  });
+  return resolveForcePlace([...remainingBlocks, combinedBlock], combinedBlock);
 }
 
 function buildChunkFromPlacement(
@@ -247,14 +206,11 @@ function getForwardChainEnd(
       const blockStart = getBlockStartMinutes(block);
       const blockEnd = getBlockEndMinutes(block);
 
-      // If this block overlaps or touches the current forward chain,
-      // extend the chain end to include it.
       if (blockStart <= chainEnd && blockEnd > chainEnd) {
         chainEnd = blockEnd;
         changed = true;
       }
 
-      // Also include blocks that directly overlap the proposed start area
       if (
         blockStart < proposedStart + proposedBlock.durationMinutes &&
         blockEnd > chainEnd
@@ -266,6 +222,153 @@ function getForwardChainEnd(
   }
 
   return chainEnd;
+}
+
+function splitBlockForwardFromStart(
+  sourceBlock: ScheduleBlock,
+  startDate: Date,
+  startMinutes: number
+): ScheduleBlock[] {
+  let remainingMinutes = sourceBlock.durationMinutes;
+  let searchDate = new Date(startDate);
+  let cursor = startMinutes;
+  let nextChunkIndex = sourceBlock.chunkIndex;
+  let firstChunkUsedOriginalId = false;
+
+  const chunks: ScheduleBlock[] = [];
+
+  while (remainingMinutes > 0) {
+    const dateKey = formatDateKey(searchDate);
+
+    if (cursor < NEXT_WORK_START_MINUTES && dateKey !== sourceBlock.blockDate) {
+      cursor = NEXT_WORK_START_MINUTES;
+    }
+
+    const availableMinutes = WORK_DAY_END_MINUTES - cursor;
+    const chunkMinutes = Math.min(remainingMinutes, availableMinutes);
+
+    if (chunkMinutes > 0) {
+      const chunkId = firstChunkUsedOriginalId
+        ? `${sourceBlock.assignmentId}-chunk-${Date.now()}-${nextChunkIndex}`
+        : sourceBlock.id;
+
+      const chunk = buildChunkFromPlacement(
+        sourceBlock,
+        chunkId,
+        dateKey,
+        cursor,
+        chunkMinutes,
+        nextChunkIndex
+      );
+
+      chunks.push(chunk);
+      remainingMinutes -= chunkMinutes;
+      nextChunkIndex += 1;
+      firstChunkUsedOriginalId = true;
+    }
+
+    if (remainingMinutes > 0) {
+      searchDate.setDate(searchDate.getDate() + 1);
+      cursor = NEXT_WORK_START_MINUTES;
+    }
+  }
+
+  return chunks;
+}
+
+export function resolveForcePlace(
+  allBlocks: ScheduleBlock[],
+  proposedBlock: ScheduleBlock
+) {
+  const proposedDate = parseLocalDate(proposedBlock.blockDate);
+  if (!proposedDate) {
+    return allBlocks;
+  }
+
+  const normalizedProposed = setBlockStartFromDateAndMinutes(
+    proposedBlock,
+    proposedDate,
+    getBlockStartMinutes(proposedBlock)
+  );
+
+  const normalizedProposedDate = parseLocalDate(normalizedProposed.blockDate);
+  if (!normalizedProposedDate) {
+    return allBlocks;
+  }
+
+  const proposedStart = getBlockStartMinutes(normalizedProposed);
+  const proposedEnd = getBlockEndMinutes(normalizedProposed);
+
+  const unaffectedBlocks = allBlocks.filter(
+    (block) =>
+      block.id !== normalizedProposed.id &&
+      block.blockDate !== normalizedProposed.blockDate
+  );
+
+  const sameDayBlocks = allBlocks
+    .filter(
+      (block) =>
+        block.id !== normalizedProposed.id &&
+        block.blockDate === normalizedProposed.blockDate
+    )
+    .sort((a, b) => getBlockStartMinutes(a) - getBlockStartMinutes(b));
+
+  const resolvedSameDayBlocks: ScheduleBlock[] = [];
+  const overflowChunks: ScheduleBlock[] = [];
+
+  let currentEnd = proposedEnd;
+
+  for (const block of sameDayBlocks) {
+    const blockStart = getBlockStartMinutes(block);
+    const blockEnd = getBlockEndMinutes(block);
+
+    if (blockEnd <= proposedStart) {
+      resolvedSameDayBlocks.push(block);
+      continue;
+    }
+
+    if (blockStart < currentEnd) {
+      const movedStartDate = parseLocalDate(normalizedProposed.blockDate);
+      if (!movedStartDate) {
+        resolvedSameDayBlocks.push(block);
+        continue;
+      }
+
+      const splitChunks = splitBlockForwardFromStart(
+        {
+          ...block,
+          isManuallyPlaced: true,
+        },
+        movedStartDate,
+        currentEnd
+      );
+
+      const firstChunk = splitChunks[0];
+      if (firstChunk.blockDate === normalizedProposed.blockDate) {
+        resolvedSameDayBlocks.push(firstChunk);
+      } else {
+        overflowChunks.push(firstChunk);
+      }
+
+      if (splitChunks.length > 1) {
+        overflowChunks.push(...splitChunks.slice(1));
+      }
+
+      currentEnd =
+        firstChunk.blockDate === normalizedProposed.blockDate
+          ? getBlockEndMinutes(firstChunk)
+          : currentEnd;
+    } else {
+      resolvedSameDayBlocks.push(block);
+    }
+  }
+
+  return [
+    ...unaffectedBlocks,
+    ...resolvedSameDayBlocks,
+    normalizedProposed,
+    ...overflowChunks,
+  ];
 }
 
 export function resolveFitAtEnd(
@@ -295,8 +398,6 @@ export function resolveFitAtEnd(
     const dateKey = formatDateKey(searchDate);
     const dayBlocks = getBlocksOnDate(blocksWithoutProposed, dateKey);
 
-    // first day starts at the forward chain end
-    // next days start at 6:00 AM
     if (dateKey !== proposedBlock.blockDate) {
       cursor = NEXT_WORK_START_MINUTES;
     }
