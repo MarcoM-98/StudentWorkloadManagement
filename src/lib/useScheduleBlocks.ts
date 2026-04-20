@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import {
   formatDateKey,
   getConflictingBlocks,
   parseLocalDate,
+  resolveCombineChunks,
   resolveFitAtEnd,
   resolveForcePlace,
   type PendingConflict,
@@ -28,11 +35,17 @@ type DragState = {
   pointerOffsetY: number;
 };
 
+type PendingCombine = {
+  draggedBlock: ScheduleBlock;
+  targetBlock: ScheduleBlock;
+  popupPosition: PopupPosition;
+};
+
 type UseScheduleBlocksParams = {
   tasks: CalendarTask[];
   numberOfDays: number;
   visibleStartDate: Date;
-  overlayRef: React.RefObject<HTMLDivElement | null>;
+  overlayRef: RefObject<HTMLDivElement | null>;
   minuteHeight: number;
   timeLabelWidth: number;
 };
@@ -149,6 +162,9 @@ export function useScheduleBlocks({
   const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(
     null
   );
+  const [pendingCombine, setPendingCombine] = useState<PendingCombine | null>(
+    null
+  );
 
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -173,7 +189,7 @@ export function useScheduleBlocks({
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
       if (popupRef.current?.contains(target)) return;
-      if (pendingConflict) return;
+      if (pendingConflict || pendingCombine) return;
 
       setSelectedBlockId(null);
       setPopupPosition(null);
@@ -186,7 +202,7 @@ export function useScheduleBlocks({
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [selectedBlockId, dragState, pendingConflict]);
+  }, [selectedBlockId, dragState, pendingConflict, pendingCombine]);
 
   useEffect(() => {
     function handlePointerMove(event: MouseEvent) {
@@ -197,7 +213,8 @@ export function useScheduleBlocks({
       const dayColumnWidth = usableWidth / numberOfDays;
 
       const pointerXInside = event.clientX - overlayRect.left - timeLabelWidth;
-      const pointerYInside = event.clientY - overlayRect.top - dragState.pointerOffsetY;
+      const pointerYInside =
+        event.clientY - overlayRect.top - dragState.pointerOffsetY;
 
       let columnIndex = Math.floor(pointerXInside / dayColumnWidth);
       columnIndex = clamp(columnIndex, 0, numberOfDays - 1);
@@ -238,7 +255,8 @@ export function useScheduleBlocks({
       }
 
       const startingBlock =
-        scheduleBlocks.find((block) => block.id === dragState.blockId) || proposedBlock;
+        scheduleBlocks.find((block) => block.id === dragState.blockId) ||
+        proposedBlock;
 
       const allOtherBlocks = scheduleBlocks.filter(
         (block) => block.id !== dragState.blockId
@@ -250,8 +268,27 @@ export function useScheduleBlocks({
       let popupX = event.clientX - overlayRect.left + 8;
       let popupY = event.clientY - overlayRect.top + 8;
 
-      popupX = clamp(popupX, 8, overlayRect.width - 190);
-      popupY = clamp(popupY, 8, overlayRect.height - 150);
+      popupX = clamp(popupX, 8, overlayRect.width - 220);
+      popupY = clamp(popupY, 8, overlayRect.height - 160);
+
+      const combineTarget = conflicts.find(
+        (block) =>
+          block.assignmentId === proposedBlock.assignmentId &&
+          block.id !== proposedBlock.id
+      );
+
+      if (combineTarget) {
+        setPendingCombine({
+          draggedBlock: { ...proposedBlock },
+          targetBlock: { ...combineTarget },
+          popupPosition: { x: popupX, y: popupY },
+        });
+        setPendingConflict(null);
+        setSelectedBlockId(null);
+        setPopupPosition(null);
+        setDragState(null);
+        return;
+      }
 
       if (conflicts.length > 0) {
         setPendingConflict({
@@ -261,10 +298,12 @@ export function useScheduleBlocks({
           conflictBlockIds: conflicts.map((block) => block.id),
           popupPosition: { x: popupX, y: popupY },
         });
+        setPendingCombine(null);
         setSelectedBlockId(null);
         setPopupPosition(null);
       } else {
         setPendingConflict(null);
+        setPendingCombine(null);
       }
 
       setDragState(null);
@@ -281,12 +320,12 @@ export function useScheduleBlocks({
     };
   }, [
     dragState,
-    numberOfDays,
-    visibleStartDate,
-    scheduleBlocks,
-    overlayRef,
     minuteHeight,
+    numberOfDays,
+    overlayRef,
+    scheduleBlocks,
     timeLabelWidth,
+    visibleStartDate,
   ]);
 
   const selectedBlock = useMemo(
@@ -323,6 +362,7 @@ export function useScheduleBlocks({
     setSelectedBlockId(null);
     setPopupPosition(null);
     setPendingConflict(null);
+    setPendingCombine(null);
   }
 
   function handleSelectBlock(
@@ -351,6 +391,7 @@ export function useScheduleBlocks({
     y = Math.max(8, Math.min(y, maxY));
 
     setPendingConflict(null);
+    setPendingCombine(null);
     setSelectedBlockId(blockId);
     setPopupPosition({ x, y });
   }
@@ -366,6 +407,7 @@ export function useScheduleBlocks({
     const pointerOffsetY = event.clientY - blockRect.top;
 
     setPendingConflict(null);
+    setPendingCombine(null);
     setSelectedBlockId(block.id);
     setPopupPosition(null);
     setDragState({
@@ -391,7 +433,9 @@ export function useScheduleBlocks({
       splitMinutes <= 0 ||
       splitMinutes >= selectedBlock.durationMinutes
     ) {
-      window.alert("Enter a number greater than 0 and less than the block duration.");
+      window.alert(
+        "Enter a number greater than 0 and less than the block duration."
+      );
       return;
     }
 
@@ -422,7 +466,9 @@ export function useScheduleBlocks({
 
     setScheduleBlocks((prev) =>
       prev.map((block) =>
-        block.id === pendingConflict.blockId ? pendingConflict.originalBlock : block
+        block.id === pendingConflict.blockId
+          ? pendingConflict.originalBlock
+          : block
       )
     );
 
@@ -449,23 +495,41 @@ export function useScheduleBlocks({
     setPendingConflict(null);
   }
 
+  function handleCancelCombine() {
+    setPendingCombine(null);
+  }
+
+  function handleConfirmCombine() {
+    if (!pendingCombine) return;
+
+    setScheduleBlocks((prev) =>
+      resolveCombineChunks(
+        prev,
+        pendingCombine.draggedBlock,
+        pendingCombine.targetBlock
+      )
+    );
+
+    setPendingCombine(null);
+  }
+
   return {
     popupRef,
-    scheduleBlocks,
     selectedBlockId,
     popupPosition,
     dragState,
     pendingConflict,
+    pendingCombine,
     selectedBlock,
     visibleBlocks,
     clearMenus,
-    setSelectedBlockId,
-    setPopupPosition,
     handleSelectBlock,
     handleBlockMouseDown,
     handleSplitChunk,
     handleCancelConflict,
     handleForcePlace,
     handleFitAtEnd,
+    handleCancelCombine,
+    handleConfirmCombine,
   };
 }
