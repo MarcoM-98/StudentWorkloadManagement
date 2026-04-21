@@ -229,5 +229,56 @@ if (isEditing) {
         </span>
       </div>
     </div>
+
+        {/* the UI for the smart links/assistant */}
+      <div className="w-full mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+        {!isActionable ? (
+            {/*  If the AI labeled this a syllabus or schedule, 
+          it hides the buttons and just shows a small "Reference Document" tag. */}
+          <p className="text-xs text-zinc-500 dark:text-zinc-500 font-medium"> Course Reference Document</p>
+        ) : (
+          <>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }}
+              className="text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+            >
+              {showHelp ? "▼ Hide Study Resources" : "💡 Need Help Studying?"}
+            </button>
+
+            {showHelp && (
+              <div 
+                className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800" 
+                onClick={(e) => e.stopPropagation()} // Prevents clicking the grid from opening the edit mode
+              >
+                <div>
+                  <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase mb-2 border-b dark:border-zinc-700 pb-1">📺 Videos</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.videos.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:underline">{link.name} </a>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-green-600 dark:text-green-500 uppercase mb-2 border-b dark:border-zinc-700 pb-1">📚 Reading</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.reading.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:underline">{link.name} </a>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase mb-2 border-b dark:border-zinc-700 pb-1">🔍 Search</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.general.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 hover:underline">{link.name} </a>
+                    ))}
+                    </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
 );
 }
