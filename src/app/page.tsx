@@ -13,8 +13,11 @@ type Task = {
   dueDate: string;
   priority: string;
   customPercentage?: number | null; // ? optional it may exist or not, also user may override the percentage to a custom one
-  id: number;
-  duration: number;
+  id:number;
+  duration:number;
+  courseCode?: string; 
+  keywords?: string[]; 
+  isActionable?: boolean;
 };
 
 export default function Home() {
@@ -22,6 +25,8 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]);
+  const [userSettings, setUserSettings] = useState({ university: "Texas State University", major: "Undeclared" });
+  const [isSaving, setIsSaving] = useState(false);
 
   const isOverloaded = false;
 
@@ -50,15 +55,39 @@ export default function Home() {
       setLoading(false);
     }
   }
-
-  const calculatePriority = (
-    priorityWord: string,
-    customNumber?: number | null
-  ) => {
-    if (customNumber !== null && customNumber !== undefined) {
-      // If the user typed a custom override, always use it
-      return customNumber;
+// fetches the user saved majro (the mock file that was created in /api/settings )
+    async function fetchSettings() {
+    try {
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setUserSettings(data);
+      }
+    } catch (e) {
+      console.error("Failed to load settings", e);
     }
+  }
+
+  // Handle dropdown selection
+  async function handleProfileUpdate(newMajor: string) {
+    setIsSaving(true);
+    setUserSettings({ ...userSettings, major: newMajor });
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ major: newMajor })
+      });
+    } catch (e) { 
+      console.error(e); 
+    }
+    setIsSaving(false);
+  }
+
+    const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
+    if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
+        return customNumber; 
+    } 
     // if notusing custom then keep using this if they have those words set
     if (priorityWord === "IMMEDIATE") return 100;
     if (priorityWord === "medium") return 50;
