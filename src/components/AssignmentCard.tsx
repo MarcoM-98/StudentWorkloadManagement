@@ -177,7 +177,7 @@ if (isEditing) {
 
   return (
     <div 
-    className="bg-white dark:bg-black p-4 rounded-lg shadow-sm border border-zinc-200 mb-4 flex justify-between items-center"
+    className="bg-white dark:bg-black p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-900 transition-colors"
     onClick={() => setIsEditing(true)}
     >
       <div>
@@ -232,9 +232,8 @@ if (isEditing) {
 
         {/* the UI for the smart links/assistant */}
       <div className="w-full mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+    {/*  If the AI labeled this a syllabus or schedule, it hides the buttons and just shows a small "Reference Document" tag. */}
         {!isActionable ? (
-            {/*  If the AI labeled this a syllabus or schedule, 
-          it hides the buttons and just shows a small "Reference Document" tag. */}
           <p className="text-xs text-zinc-500 dark:text-zinc-500 font-medium"> Course Reference Document</p>
         ) : (
           <>
