@@ -40,4 +40,69 @@ export function generateResources(
 
   let courseMatched = false; // We use this flag to stop the code from checking the next if blocks
 
+  // Core Classes, we check if the course code includes common core subjects.
+  // and provide links to useful websites that can help
+  if (courseUpper.includes("MATH")) {
+
+    // .unshift() adds this new link to the very top of the readingLinks array
+    readingLinks.unshift({ name: "Wolfram Alpha", url: `https://www.wolframalpha.com/input/?i=${encodedTopic}` });
+    courseMatched = true; // Mark as matched so we skip the next if blocks
+  } 
+  else if (courseUpper.includes("HIST") || courseUpper.includes("GOVT") || courseUpper.includes("POLS")) {
+    readingLinks.unshift({ name: "JSTOR", url: `https://www.jstor.org/action/doBasicSearch?Query=${encodedTopic}` });
+    readingLinks.unshift({ name: "History.com", url: `https://www.google.com/search?q=site:history.com+${encodedTopic}` });
+    courseMatched = true;
+  } 
+  else if (courseUpper.includes("ENG") || courseUpper.includes("WRIT") || courseUpper.includes("LIT")) {
+    readingLinks.unshift({ name: "Purdue OWL", url: `https://www.google.com/search?q=site:owl.purdue.edu+${encodedTopic}` });
+    readingLinks.unshift({ name: "LitCharts", url: `https://www.google.com/search?q=site:litcharts.com+${encodedTopic}` });
+    courseMatched = true;
+  } 
+  else if (courseUpper.includes("BIO") || courseUpper.includes("CHEM") || courseUpper.includes("PHYS")) { // this also works if the major is biology
+    readingLinks.unshift({ name: "ScienceDaily", url: `https://www.google.com/search?q=site:sciencedaily.com+${encodedTopic}` });
+    readingLinks.unshift({ name: "ScienceDirect", url: `https://www.google.com/search?q=site:sciencedirect.com+${encodedTopic}` });
+    courseMatched = true;
+  }
+  // Major specifics courses, we can add more in the future or find a better way to do this?
+  // Only runs if previous function didn't find a match
+
+  
+  if (!courseMatched) { // computer science courses
+    if (courseUpper.includes("CS") || courseUpper.includes("CIS")) {
+      readingLinks.unshift({ name: "GeeksforGeeks", url: `https://www.google.com/search?q=site:geeksforgeeks.org+${encodedTopic}` });
+      readingLinks.unshift({ name: "Stack Overflow", url: `https://stackoverflow.com/search?q=${encodedTopic}` });
+      courseMatched = true;
+    } 
+    else if (courseUpper.includes("NURS")) { // nursing courses
+      readingLinks.unshift({ name: "PubMed", url: `https://pubmed.ncbi.nlm.nih.gov/?term=${encodedTopic}` });
+      courseMatched = true;
+    } 
+    else if (courseUpper.includes("PSY") || courseUpper.includes("SOC")) { // psychology courses
+      readingLinks.unshift({ name: "Simply Psychology", url: `https://www.google.com/search?q=site:simplypsychology.org+${encodedTopic}` });
+      courseMatched = true;
+    } 
+    else if (courseUpper.includes("BUS") || courseUpper.includes("MGT") || courseUpper.includes("ACC") || courseUpper.includes("ECO")) { // business courses
+      readingLinks.unshift({ name: "Investopedia", url: `https://www.google.com/search?q=site:investopedia.com+${encodedTopic}` });
+      courseMatched = true;
+    }
+    else if (courseUpper.includes("ENGR") || courseUpper.includes("EE") || courseUpper.includes("ME")) { //  General, Electrical, and Mechanical Engineering courses
+
+      readingLinks.unshift({ name: "Engineering ToolBox", url: `https://www.google.com/search?q=site:engineeringtoolbox.com+${encodedTopic}` });
+      courseMatched = true;
+    }
+    else if (courseUpper.includes("CJ") || courseUpper.includes("LAW")) {  // Criminal Justice and Pre-Law courses
+      readingLinks.unshift({ name: "Cornell Law (LII)", url: `https://www.google.com/search?q=site:law.cornell.edu+${encodedTopic}` });
+      courseMatched = true;
+    }
+    else if (courseUpper.includes("MC") || courseUpper.includes("JOU") || courseUpper.includes("PR")) { // Mass Communication, Journalism, and Public Relations courses
+      readingLinks.unshift({ name: "Nieman Lab", url: `https://www.google.com/search?q=site:niemanlab.org+${encodedTopic}` });
+      courseMatched = true;
+    }
+    else if (courseUpper.includes("KIN") || courseUpper.includes("HHP")) { // Kinesiology and Health & Human Performance courses
+      readingLinks.unshift({ name: "Physiopedia", url: `https://www.google.com/search?q=site:physio-pedia.com+${encodedTopic}` });
+      courseMatched = true;
+    }
+  
+  }
+
 }
