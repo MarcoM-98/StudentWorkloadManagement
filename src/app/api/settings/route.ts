@@ -4,7 +4,7 @@ import Assignment from "../../../../../mongodb-mongoose/model/UserSetting.js";
 
 export async function GET(req: Request) {
 
-return NextResponse.json({ university: "General University", major: "Undeclared" });
+return NextResponse.json({ university: "Texas State University", major: "Undeclared" });
 }
 
 export async function PATCH(req: Request) {
