@@ -1,5 +1,6 @@
 "use client";
 import {useState, useEffect} from "react"; // added useEffect to synchronize saving with an external system (mongodb)
+import { generateResources } from "@/lib/resourceGenerator";
 type AssignmentProps = {
     id: string; // mongodb _id
     title: string;
@@ -13,12 +14,22 @@ type AssignmentProps = {
     onAcceptSuggestion?: (id: string, newDate: string) => void;
     isDelayed?: boolean;
     isCritical?: boolean;
+    courseCode?: string;
+    keywords?: string[];
+    isActionable?: boolean;
+    userMajor?: string;
+    userUniversity?: string;
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, suggestedDate, onAcceptSuggestion, isDelayed, isCritical}: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
+suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
+userUniversity = "Texas State University"}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    const [showHelp, setShowHelp] = useState(false);
+    const resources = generateResources(userUniversity, userMajor, courseCode, title, keywords);
     
     // state initialization with fallbacks to prevent "uncontrolled" errors such as empty string or 0 on duration 
     // also react does not like when an input switches from an uncontrolled to a controlled value
@@ -180,6 +191,7 @@ if (isEditing) {
     className="bg-white dark:bg-black p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-900 transition-colors"
     onClick={() => setIsEditing(true)}
     >
+     <div className="flex justify-between items-start">
       <div>
         <h3 className="text-md font-bold">{title}</h3>
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
