@@ -104,5 +104,32 @@ export function generateResources(
     }
   
   }
+  // If the Canvas course code was empty or different from what we currently have above, we fall back to what the user set in their profile.
+  if (!courseMatched) {
 
+    // We search the majorDictionary keys to see if any of them exist inside the user's major string.
+    // for example if major is "Bachelors of Nursing", it  matches the "Nursing" key from the majorDictionary function above
+    const matchedUserMajor = Object.keys(majorDictionary).find(key => major.toLowerCase().includes(key.toLowerCase()));
+    
+    if (matchedUserMajor) {
+      // Grab the URL prefix for that major and unshift it to the top.
+      const site = majorDictionary[matchedUserMajor];
+      readingLinks.unshift({ name: site.name, url: `${site.urlPrefix}${encodedTopic}` });
+    }
+  }
+
+  // We package the custom reading links we just built alongside the universal Video and General search links.
+  return {
+    videos: [
+      { name: "YouTube Tutorials", url: `https://www.youtube.com/results?search_query=${encodedTopic}` },
+      { name: "CrashCourse / TED-Ed", url: `https://www.youtube.com/results?search_query=CrashCourse+OR+TED-Ed+${encodedTopic}` }
+    ],
+    reading: readingLinks,
+    general: [
+      // We also inject the university name into this Google search so it finds documents specific to their school or our school since we currently only have it hardcoded to txst
+      { name: `${university} Context Search`, url: `https://www.google.com/search?q=${encodeURIComponent(`${university} ${searchTopic}`)}` },
+      { name: "General Web Search", url: `https://www.google.com/search?q=${encodedTopic}` }
+    ]
+  };
 }
+
