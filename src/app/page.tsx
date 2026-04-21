@@ -127,14 +127,50 @@ export default function Home() {
 }, [tasks, scheduleSuggestions]);
     // run the function we just created
    useEffect(() => { fetchAssignments();
+   fetchSettings();
   }, []);
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <OverloadBanner /> {/* overload banner warning*/}
+
+        {/* choosing the major from the dropdown menu */}
+        <div className={`mt-6 p-4 rounded-xl border transition-all ${userSettings.major === "Undeclared" ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800" : "bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 flex flex-col md:flex-row justify-between items-center"}`}>
+          <div className="mb-2 md:mb-0">
+            <h2 className={`font-bold ${userSettings.major === "Undeclared" ? "text-blue-800 dark:text-blue-300 text-lg mb-2" : "text-zinc-700 dark:text-zinc-300"}`}>
+              {userSettings.major === "Undeclared" ? "Personalize Your Academic Search!" : "Academic Profile"}
+            </h2>
+            {userSettings.major === "Undeclared" && (
+              <p className="text-sm text-blue-600 dark:text-blue-400">Select your major to get personalized study links.</p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <select 
+              value={userSettings.major} 
+              onChange={(e) => handleProfileUpdate(e.target.value)}
+              disabled={isSaving}
+              className="p-2 border rounded-lg bg-white dark:bg-zinc-900 dark:border-zinc-600 dark:text-white text-sm cursor-pointer shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Undeclared">Select Major...</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Nursing">Nursing</option>
+              <option value="Business">Business</option>
+              <option value="Psychology">Psychology</option>
+              <option value="Biology">Biology</option>
+              <option value="Engineering">Engineering</option>
+              <option value="English">English</option>
+              <option value="Criminal Justice">Criminal Justice</option>
+              <option value="Mass Communication">Mass Communication</option>
+              <option value="Kinesiology">Kinesiology</option>
+              <option value="Political Science">Political Science</option>
+              <option value="History">History</option>
+            </select>
+            {isSaving && <span className="text-xs text-zinc-500 dark:text-zinc-400 animate-pulse font-medium">Saving...</span>}
+          </div>
+        </div>
         
-        <div className="mt-6">
+        <div className="mt-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
             
@@ -174,6 +210,11 @@ export default function Home() {
                   onAcceptSuggestion={handleAcceptSuggestion}
                   isDelayed={suggestion?.isDelayed}
                   isCritical={suggestion?.isCritical}
+                  courseCode={task.courseCode || ""}
+                  keywords={task.keywords || []}
+                  isActionable={task.isActionable !== false}
+                  userMajor={userSettings.major}
+                  userUniversity={userSettings.university}
                 />
                 );
               })
