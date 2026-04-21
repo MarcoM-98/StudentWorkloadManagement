@@ -20,5 +20,24 @@ const majorDictionary: Record<string, { name: string; urlPrefix: string }> = {
 };
 
 export function generateResources(
-  university: string, major: string, courseCode: string = "", title: string, keywords: string[] = []
-): ResourceLinks {}
+  university: string, 
+  major: string, 
+  courseCode: string = "", // / Defaults to an empty string if Canvas didn't provide one
+  title: string, 
+  keywords: string[] = [] // Defaults to an empty string if OpenAI didn't provide one
+
+): ResourceLinks {
+    const searchTopic = keywords.length > 0 ? keywords.join(" ") : title; // If the AI found keywords join them with a space
+                                                                        // If there are no keywords, just use the title of the assignment.
+    const encodedTopic = encodeURIComponent(searchTopic);   // turns spaces into '%20' so the text is safe to put inside a web URL
+    const courseUpper = courseCode.toUpperCase(); // this just converts the Canvas course code to uppercase 
+
+    // Every single student gets these two links, no matter what class they are taking.
+    let readingLinks = [
+    { name: "Google Scholar", url: `https://scholar.google.com/scholar?q=${encodedTopic}` },
+    { name: "Quizlet Flashcards", url: `https://quizlet.com/search?query=${encodedTopic}&type=sets` }
+  ];
+
+  let courseMatched = false; // We use this flag to stop the code from checking the next if blocks
+
+}
