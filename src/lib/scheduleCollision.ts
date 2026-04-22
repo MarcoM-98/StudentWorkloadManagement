@@ -23,8 +23,8 @@ export type PendingConflict = {
 };
 
 const MINUTES_PER_DAY = 24 * 60;
-const NEXT_WORK_START_MINUTES = 6 * 60;
-const WORK_DAY_END_MINUTES = 24 * 60;
+const NEXT_WORK_START_MINUTES = 9 * 60;
+const WORK_DAY_END_MINUTES = 22 * 60;
 
 export function parseLocalDate(dateString: string) {
   if (!dateString) return null;
