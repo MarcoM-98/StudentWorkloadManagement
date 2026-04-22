@@ -235,26 +235,6 @@ export default function Home() {
                   userUniversity={userSettings.university}
                 />
                 );
-                return (
-                  <AssignmentCard // if it finds work/assignments get their info
-                    key={task._id}
-                    id={task._id?.toString() || task._id} // pass the id
-                    title={task.title}
-                    dueDate={task.dueDate}
-                    duration={task.duration || 0} // Pass the duration
-                    priorityPercentage={calculatePriority(
-                      task.priority,
-                      task.customPercentage
-                    )}
-                    priorityWord={task.priority}
-                    customPercentage={task.customPercentage}
-                    onUpdate={fetchAssignments} // Pass the refresh function
-                    suggestedDate={suggestion?.suggestedDate}
-                    onAcceptSuggestion={handleAcceptSuggestion}
-                    isDelayed={suggestion?.isDelayed}
-                    isCritical={suggestion?.isCritical}
-                  />
-                );
               })
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
@@ -266,6 +246,7 @@ export default function Home() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </DashboardLayout>
   );
