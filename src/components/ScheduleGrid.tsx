@@ -52,7 +52,10 @@ export default function ScheduleGrid({
     [visibleStartDate, numberOfDays]
   );
 
-  const hours = Array.from({ length: 24 }, (_, index) => index);
+  const hours = useMemo(
+    () => Array.from({ length: 24 }, (_, index) => index),
+    []
+  );
 
   const {
     popupRef,
@@ -81,19 +84,23 @@ export default function ScheduleGrid({
     timeLabelWidth: TIME_LABEL_WIDTH,
   });
 
-  const dayLoads = useMemo(() => {
-    return days.map((day, index) => {
-      const dayBlocks = visibleBlocks.filter(
-        (block) => block.visibleDayOffset === index
-      );
+  const dayLoads = useMemo(
+    () =>
+      days.map((_, index) =>
+        visibleBlocks
+          .filter((block) => block.visibleDayOffset === index)
+          .reduce((sum, block) => sum + block.durationMinutes, 0)
+      ),
+    [days, visibleBlocks]
+  );
 
-      return dayBlocks.reduce((sum, block) => sum + block.durationMinutes, 0);
-    });
-  }, [days, visibleBlocks]);
+  const dayStatuses = useMemo(
+    () => dayLoads.map((minutes) => getDayLoadStatus(minutes)),
+    [dayLoads]
+  );
 
-  const dayStatuses = useMemo(() => {
-    return dayLoads.map((minutes) => getDayLoadStatus(minutes));
-  }, [dayLoads]);
+  const startLabel = `${days[0].getMonth() + 1}/${days[0].getDate()}`;
+  const endLabel = `${days[days.length - 1].getMonth() + 1}/${days[days.length - 1].getDate()}`;
 
   function handlePrevious() {
     clearMenus();
@@ -113,8 +120,8 @@ export default function ScheduleGrid({
   return (
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-950">
       <ScheduleGridHeader
-        startLabel={`${days[0].getMonth() + 1}/${days[0].getDate()}`}
-        endLabel={`${days[days.length - 1].getMonth() + 1}/${days[days.length - 1].getDate()}`}
+        startLabel={startLabel}
+        endLabel={endLabel}
         dailyCapacityHours={DAILY_CAPACITY_MINUTES / 60}
         onPrevious={handlePrevious}
         onToday={handleToday}
