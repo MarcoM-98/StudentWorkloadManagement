@@ -34,7 +34,13 @@ const userSettingSchema = new Schema(
             type: Number,
             required: true,
             default: 600
-        }
+        },
+        university: { 
+            type: String, 
+            default: "Texas State University" }, // we can change this to default -> required: true later if we implement a profile for each student and they can add their major 
+        major: { 
+            type: String, 
+            default: "Undeclared" },// we can change this to default -> required: true
 
     },
     {
@@ -42,3 +48,6 @@ const userSettingSchema = new Schema(
         versionKey: false
     }
 );
+const UserSetting = mongoose.models.UserSetting || mongoose.model("UserSetting", userSettingSchema);
+
+export default UserSetting

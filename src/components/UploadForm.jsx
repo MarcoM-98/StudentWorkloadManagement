@@ -49,6 +49,10 @@ export default function UploadForm() {
   const [showReview, setShowReview] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  const [keywords, setKeywords] = useState([]);
+  const [isActionable, setIsActionable] = useState(true);
+
+  // animated dots
   const [dots, setDots] = useState("");
 
   useEffect(() => {
@@ -172,6 +176,8 @@ export default function UploadForm() {
         setMessage("Analysis returned invalid data.");
         return;
       }
+      setKeywords(analyzeData.data.keywords || []);
+      setIsActionable(analyzeData.data.isActionable ?? true);
 
       const extractedMinutes = analyzeData.data.minutes ?? 0;
       const extractedDueDate = normalizeDateForInput(
@@ -200,6 +206,8 @@ export default function UploadForm() {
       duration: Number(minutes),
       dueDate: normalizeDateForInput(dueDate),
       priorityPercentage: 0,
+      keywords: keywords,    
+      isActionable: isActionable
     };
 
     try {
@@ -247,6 +255,7 @@ export default function UploadForm() {
       console.error(error);
       setMessage("Failed to save assignment.");
     }
+
   }
 
   async function handleSaveEdit(id, updatedFields) {

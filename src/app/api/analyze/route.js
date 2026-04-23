@@ -112,18 +112,26 @@ export async function POST(req) {
 Respond EXACTLY in this format:
 {
   "minutes": number,
-  "due_date": "string"
+  "due_date": "string",
+  "is_actionable_assignment": boolean,
+  "keywords": ["string", "string"]
 }
 
-Rules for due_date:
-- Use YYYY-MM-DD format
-- If no due date is found, return ""
-- Do not return formats like 01JAN26, 4/4/26, or "today"
+Rules
+1. is_actionable_assignment: Set TRUE if this is an assignment, a homework, a project, a quiz, a exam, 
+a study guide, or an essay. Set FALSE if this is a syllabus, course schedule, or policy document.
+2. If FALSE, set "minutes" to 0, "due_date" to "", and "keywords" to [].
+3. If TRUE, extract the minutes, due date, and 2 to 3 highly specific study keywords.
+- Use YYYY-MM-DD format for dates, if no due date is found, return "". Do not return formats like 01JAN26, 4/4/26, or "today"
+
+
 
 Example:
 {
   "minutes": 120,
-  "due_date": "2026-04-04"
+  "due_date": "2026-04-04",
+  "is_actionable_assignment": true,
+  "keywords": ["Abstract Syntax Trees", "Compiler Construction"]
 }
 
 Assignment:${content}`,
@@ -154,6 +162,8 @@ Assignment:${content}`,
     parsed = {
       minutes: Number(parsed.minutes) || 0,
       due_date: normalizeDueDate(parsed.due_date),
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      isActionable: parsed.is_actionable_assignment !== false, 
     };
 
     // Return structured response

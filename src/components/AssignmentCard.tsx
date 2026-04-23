@@ -1,5 +1,6 @@
 "use client";
 import {useState, useEffect} from "react"; // added useEffect to synchronize saving with an external system (mongodb)
+import { generateResources } from "@/lib/resourceGenerator";
 type AssignmentProps = {
     id: string; // mongodb _id
     title: string;
@@ -13,12 +14,22 @@ type AssignmentProps = {
     onAcceptSuggestion?: (id: string, newDate: string) => void;
     isDelayed?: boolean;
     isCritical?: boolean;
+    courseCode?: string;
+    keywords?: string[];
+    isActionable?: boolean;
+    userMajor?: string;
+    userUniversity?: string;
 
 };
 
-export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, suggestedDate, onAcceptSuggestion, isDelayed, isCritical}: AssignmentProps) {
+export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
+suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
+userUniversity = "Texas State University"}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    const [showHelp, setShowHelp] = useState(false);
+    const resources = generateResources(userUniversity, userMajor, courseCode, title, keywords);
     
     // state initialization with fallbacks to prevent "uncontrolled" errors such as empty string or 0 on duration 
     // also react does not like when an input switches from an uncontrolled to a controlled value
@@ -177,9 +188,10 @@ if (isEditing) {
 
   return (
     <div 
-    className="bg-white dark:bg-black p-4 rounded-lg shadow-sm border border-zinc-200 mb-4 flex justify-between items-center"
+    className="bg-white dark:bg-black p-4 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-900 transition-colors"
     onClick={() => setIsEditing(true)}
     >
+     <div className="flex justify-between items-start">
       <div>
         <h3 className="text-md font-bold">{title}</h3>
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
@@ -227,6 +239,56 @@ if (isEditing) {
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
           Priority: {priorityPercentage}%
         </span>
+      </div>
+    </div>
+
+        {/* the UI for the smart links/assistant */}
+      <div className="w-full mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+    {/*  If the AI labeled this a syllabus or schedule, it hides the buttons and just shows a small "Reference Document" tag. */}
+        {!isActionable ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-500 font-medium"> Course Reference Document</p>
+        ) : (
+          <>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }}
+              className="text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+            >
+              {showHelp ? "▼ Hide Study Resources" : "💡 Need Help Studying?"}
+            </button>
+
+            {showHelp && (
+              <div 
+                className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800" 
+                onClick={(e) => e.stopPropagation()} // Prevents clicking the grid from opening the edit mode
+              >
+                <div>
+                  <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase mb-2 border-b dark:border-zinc-700 pb-1">📺 Videos</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.videos.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:underline">{link.name} </a>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-green-600 dark:text-green-500 uppercase mb-2 border-b dark:border-zinc-700 pb-1">📚 Reading</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.reading.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:underline">{link.name} </a>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase mb-2 border-b dark:border-zinc-700 pb-1">🔍 Search</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.general.map((link, i) => (
+                      <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 hover:underline">{link.name} </a>
+                    ))}
+                    </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
 );
