@@ -3,14 +3,13 @@
 import { useMemo, useRef, useState } from "react";
 import ScheduleBlockCard from "@/components/ScheduleBlockCard";
 import ScheduleConflictPopup from "@/components/ScheduleConflictPopup";
+import ScheduleDayHeaderRow from "@/components/ScheduleDayHeaderRow";
 import ScheduleGridHeader from "@/components/ScheduleGridHeader";
 import { useScheduleBlocks } from "@/lib/useScheduleBlocks";
 import {
   buildDays,
   DAILY_CAPACITY_MINUTES,
   formatBlockTime,
-  formatHeaderDate,
-  formatHeaderDay,
   formatHourLabel,
   getBlockHeight,
   getBlockTop,
@@ -150,8 +149,8 @@ export default function ScheduleGrid({
   return (
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-950">
       <ScheduleGridHeader
-        startLabel={formatHeaderDate(days[0])}
-        endLabel={formatHeaderDate(days[days.length - 1])}
+        startLabel={`${days[0].getMonth() + 1}/${days[0].getDate()}`}
+        endLabel={`${days[days.length - 1].getMonth() + 1}/${days[days.length - 1].getDate()}`}
         dailyCapacityHours={DAILY_CAPACITY_MINUTES / 60}
         onPrevious={handlePrevious}
         onToday={handleToday}
@@ -165,38 +164,11 @@ export default function ScheduleGrid({
             gridTemplateColumns: `80px repeat(${numberOfDays}, minmax(140px, 1fr))`,
           }}
         >
-          <div className="sticky top-0 z-20 border-b border-r border-zinc-800 bg-zinc-950" />
-
-          {days.map((day, index) => {
-            const isTodayColumn = isSameDay(day, today);
-            const dayStatus = dayStatuses[index];
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`sticky top-0 z-10 border-b border-r px-4 py-3 text-center ${
-                  isTodayColumn ? "bg-zinc-900" : "bg-zinc-950"
-                } ${dayStatus.borderClass} ${dayStatus.columnClass}`}
-              >
-                <div
-                  className={`text-xs font-medium ${
-                    isTodayColumn ? "text-blue-400" : "text-zinc-400"
-                  }`}
-                >
-                  {formatHeaderDay(day)}
-                </div>
-                <div className="text-sm font-semibold text-white">
-                  {formatHeaderDate(day)}
-                </div>
-
-                <div
-                  className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${dayStatus.badgeClass}`}
-                >
-                  {dayStatus.label}
-                </div>
-              </div>
-            );
-          })}
+          <ScheduleDayHeaderRow
+            days={days}
+            today={today}
+            dayStatuses={dayStatuses}
+          />
 
           {hours.map((hour) => (
             <HourRow
