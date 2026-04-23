@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import ScheduleBlockCard from "@/components/ScheduleBlockCard";
 import ScheduleConflictPopup from "@/components/ScheduleConflictPopup";
+import ScheduleGridHeader from "@/components/ScheduleGridHeader";
 import { useScheduleBlocks } from "@/lib/useScheduleBlocks";
 import {
   buildDays,
@@ -148,43 +149,14 @@ export default function ScheduleGrid({
 
   return (
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-zinc-400">Showing</p>
-          <p className="text-base font-semibold text-white">
-            {formatHeaderDate(days[0])} - {formatHeaderDate(days[days.length - 1])}
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Daily capacity: {(DAILY_CAPACITY_MINUTES / 60).toFixed(0)}h
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handlePrevious}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
-          >
-            ←
-          </button>
-
-          <button
-            type="button"
-            onClick={handleToday}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
-          >
-            Today
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNext}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <ScheduleGridHeader
+        startLabel={formatHeaderDate(days[0])}
+        endLabel={formatHeaderDate(days[days.length - 1])}
+        dailyCapacityHours={DAILY_CAPACITY_MINUTES / 60}
+        onPrevious={handlePrevious}
+        onToday={handleToday}
+        onNext={handleNext}
+      />
 
       <div className="w-full overflow-x-auto rounded-b-2xl">
         <div
@@ -278,37 +250,41 @@ export default function ScheduleGrid({
             );
           })}
 
-          {selectedBlock && popupPosition && !dragState && !pendingConflict && !pendingCombine && (
-            <div
-              ref={popupRef}
-              className="pointer-events-auto absolute z-40 w-40 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
-              style={{
-                left: `${popupPosition.x}px`,
-                top: `${popupPosition.y}px`,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-2 truncate text-xs font-medium text-zinc-400">
-                {selectedBlock.title}
+          {selectedBlock &&
+            popupPosition &&
+            !dragState &&
+            !pendingConflict &&
+            !pendingCombine && (
+              <div
+                ref={popupRef}
+                className="pointer-events-auto absolute z-40 w-40 rounded-lg border border-zinc-700 bg-zinc-950 p-2 shadow-xl"
+                style={{
+                  left: `${popupPosition.x}px`,
+                  top: `${popupPosition.y}px`,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-2 truncate text-xs font-medium text-zinc-400">
+                  {selectedBlock.title}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSplitChunk}
+                  className="mb-2 w-full rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
+                >
+                  Split Chunk
+                </button>
+
+                <button
+                  type="button"
+                  onClick={clearMenus}
+                  className="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
+                >
+                  Close
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={handleSplitChunk}
-                className="mb-2 w-full rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-800"
-              >
-                Split Chunk
-              </button>
-
-              <button
-                type="button"
-                onClick={clearMenus}
-                className="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
-              >
-                Close
-              </button>
-            </div>
-          )}
+            )}
 
           {pendingConflict && (
             <div ref={popupRef}>
@@ -361,4 +337,3 @@ export default function ScheduleGrid({
     </div>
   );
 }
-
