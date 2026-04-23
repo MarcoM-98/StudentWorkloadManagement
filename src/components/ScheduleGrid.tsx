@@ -23,6 +23,10 @@ const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 const TOTAL_DAY_HEIGHT = 24 * HOUR_HEIGHT;
 const TIME_LABEL_WIDTH = 80;
 
+// Mocked user daily capacity for now
+const DAILY_CAPACITY_MINUTES = 360; // 6 hours
+const WARNING_BUFFER_MINUTES = 60; // 1 hour over = yellow
+
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -94,14 +98,50 @@ function formatBlockTime(block: ScheduleBlock) {
   )}`;
 }
 
+function formatHoursOver(minutesOver: number) {
+  return `+${(minutesOver / 60).toFixed(1)}h`;
+}
+
+function getDayLoadStatus(totalMinutes: number) {
+  if (totalMinutes <= DAILY_CAPACITY_MINUTES) {
+    return {
+      label: "OK",
+      headerClass: "text-emerald-300",
+      badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+      columnClass: "bg-emerald-500/[0.04]",
+      borderClass: "border-emerald-500/30",
+    };
+  }
+
+  if (totalMinutes <= DAILY_CAPACITY_MINUTES + WARNING_BUFFER_MINUTES) {
+    return {
+      label: formatHoursOver(totalMinutes - DAILY_CAPACITY_MINUTES),
+      headerClass: "text-amber-300",
+      badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+      columnClass: "bg-amber-500/[0.05]",
+      borderClass: "border-amber-500/30",
+    };
+  }
+
+  return {
+    label: formatHoursOver(totalMinutes - DAILY_CAPACITY_MINUTES),
+    headerClass: "text-rose-300",
+    badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+    columnClass: "bg-rose-500/[0.06]",
+    borderClass: "border-rose-500/30",
+  };
+}
+
 function HourRow({
   hour,
   days,
   today,
+  dayStatuses,
 }: {
   hour: number;
   days: Date[];
   today: Date;
+  dayStatuses: ReturnType<typeof getDayLoadStatus>[];
 }) {
   return (
     <>
@@ -109,15 +149,16 @@ function HourRow({
         {formatHourLabel(hour)}
       </div>
 
-      {days.map((day) => {
+      {days.map((day, index) => {
         const isTodayColumn = isSameDay(day, today);
+        const dayStatus = dayStatuses[index];
 
         return (
           <div
             key={`${day.toISOString()}-${hour}`}
-            className={`relative h-16 border-b border-r border-zinc-800 ${
+            className={`relative h-16 border-b border-r ${dayStatus.borderClass} ${
               isTodayColumn ? "bg-zinc-900/70" : "bg-zinc-900/40"
-            }`}
+            } ${dayStatus.columnClass}`}
           >
             <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-zinc-800/70" />
           </div>
