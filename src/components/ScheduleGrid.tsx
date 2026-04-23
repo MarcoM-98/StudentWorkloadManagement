@@ -106,10 +106,10 @@ function getDayLoadStatus(totalMinutes: number) {
   if (totalMinutes <= DAILY_CAPACITY_MINUTES) {
     return {
       label: "OK",
-      headerClass: "text-emerald-300",
-      badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-      columnClass: "bg-emerald-500/[0.04]",
-      borderClass: "border-emerald-500/30",
+      headerClass: "text-zinc-400",
+      badgeClass: "bg-zinc-800 text-zinc-300 border-zinc-700",
+      columnClass: "",
+      borderClass: "border-zinc-800",
     };
   }
 
