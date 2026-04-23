@@ -294,15 +294,16 @@ export default function ScheduleGrid({
         >
           <div className="sticky top-0 z-20 border-b border-r border-zinc-800 bg-zinc-950" />
 
-          {days.map((day) => {
+          {days.map((day, index) => {
             const isTodayColumn = isSameDay(day, today);
+            const dayStatus = dayStatuses[index];
 
             return (
               <div
                 key={day.toISOString()}
-                className={`sticky top-0 z-10 border-b border-r border-zinc-800 px-4 py-3 text-center ${
+                className={`sticky top-0 z-10 border-b border-r px-4 py-3 text-center ${
                   isTodayColumn ? "bg-zinc-900" : "bg-zinc-950"
-                }`}
+                } ${dayStatus.borderClass} ${dayStatus.columnClass}`}
               >
                 <div
                   className={`text-xs font-medium ${
@@ -314,12 +315,24 @@ export default function ScheduleGrid({
                 <div className="text-sm font-semibold text-white">
                   {formatHeaderDate(day)}
                 </div>
+
+                <div
+                  className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${dayStatus.badgeClass}`}
+                >
+                  {dayStatus.label}
+                </div>
               </div>
             );
           })}
 
           {hours.map((hour) => (
-            <HourRow key={hour} hour={hour} days={days} today={today} />
+            <HourRow
+              key={hour}
+              hour={hour}
+              days={days}
+              today={today}
+              dayStatuses={dayStatuses}
+            />
           ))}
         </div>
 
@@ -338,13 +351,14 @@ export default function ScheduleGrid({
               (block) => block.visibleDayOffset === columnIndex
             );
             const isTodayColumn = isSameDay(day, today);
+            const dayStatus = dayStatuses[columnIndex];
 
             return (
               <div
                 key={`${day.toISOString()}-overlay`}
-                className={`relative border-r border-zinc-800 ${
+                className={`relative border-r ${dayStatus.borderClass} ${
                   isTodayColumn ? "bg-blue-500/5" : ""
-                }`}
+                } ${dayStatus.columnClass}`}
               >
                 {dayBlocks.map((block) => (
                   <ScheduleBlockCard
