@@ -23,6 +23,10 @@ const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 const TOTAL_DAY_HEIGHT = 24 * HOUR_HEIGHT;
 const TIME_LABEL_WIDTH = 80;
 
+// Mocked user daily capacity for now
+const DAILY_CAPACITY_MINUTES = 360; // 6 hours
+const WARNING_BUFFER_MINUTES = 60; // 1 hour over = yellow
+
 function getLocalStartOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -94,14 +98,50 @@ function formatBlockTime(block: ScheduleBlock) {
   )}`;
 }
 
+function formatHoursOver(minutesOver: number) {
+  return `+${(minutesOver / 60).toFixed(1)}h`;
+}
+
+function getDayLoadStatus(totalMinutes: number) {
+  if (totalMinutes <= DAILY_CAPACITY_MINUTES) {
+    return {
+      label: "OK",
+      headerClass: "text-zinc-400",
+      badgeClass: "bg-zinc-800 text-zinc-300 border-zinc-700",
+      columnClass: "",
+      borderClass: "border-zinc-800",
+    };
+  }
+
+  if (totalMinutes <= DAILY_CAPACITY_MINUTES + WARNING_BUFFER_MINUTES) {
+    return {
+      label: formatHoursOver(totalMinutes - DAILY_CAPACITY_MINUTES),
+      headerClass: "text-amber-300",
+      badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+      columnClass: "bg-amber-500/[0.05]",
+      borderClass: "border-amber-500/30",
+    };
+  }
+
+  return {
+    label: formatHoursOver(totalMinutes - DAILY_CAPACITY_MINUTES),
+    headerClass: "text-rose-300",
+    badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+    columnClass: "bg-rose-500/[0.06]",
+    borderClass: "border-rose-500/30",
+  };
+}
+
 function HourRow({
   hour,
   days,
   today,
+  dayStatuses,
 }: {
   hour: number;
   days: Date[];
   today: Date;
+  dayStatuses: ReturnType<typeof getDayLoadStatus>[];
 }) {
   return (
     <>
@@ -109,15 +149,16 @@ function HourRow({
         {formatHourLabel(hour)}
       </div>
 
-      {days.map((day) => {
+      {days.map((day, index) => {
         const isTodayColumn = isSameDay(day, today);
+        const dayStatus = dayStatuses[index];
 
         return (
           <div
             key={`${day.toISOString()}-${hour}`}
-            className={`relative h-16 border-b border-r border-zinc-800 ${
+            className={`relative h-16 border-b border-r ${dayStatus.borderClass} ${
               isTodayColumn ? "bg-zinc-900/70" : "bg-zinc-900/40"
-            }`}
+            } ${dayStatus.columnClass}`}
           >
             <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-zinc-800/70" />
           </div>
@@ -175,6 +216,20 @@ export default function ScheduleGrid({
     timeLabelWidth: TIME_LABEL_WIDTH,
   });
 
+  const dayLoads = useMemo(() => {
+    return days.map((day, index) => {
+      const dayBlocks = visibleBlocks.filter(
+        (block) => block.visibleDayOffset === index
+      );
+
+      return dayBlocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+    });
+  }, [days, visibleBlocks]);
+
+  const dayStatuses = useMemo(() => {
+    return dayLoads.map((minutes) => getDayLoadStatus(minutes));
+  }, [dayLoads]);
+
   function handlePrevious() {
     clearMenus();
     setDayOffset((prev) => prev - 1);
@@ -197,6 +252,9 @@ export default function ScheduleGrid({
           <p className="text-sm font-medium text-zinc-400">Showing</p>
           <p className="text-base font-semibold text-white">
             {formatHeaderDate(days[0])} - {formatHeaderDate(days[days.length - 1])}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Daily capacity: {(DAILY_CAPACITY_MINUTES / 60).toFixed(0)}h
           </p>
         </div>
 
@@ -236,15 +294,16 @@ export default function ScheduleGrid({
         >
           <div className="sticky top-0 z-20 border-b border-r border-zinc-800 bg-zinc-950" />
 
-          {days.map((day) => {
+          {days.map((day, index) => {
             const isTodayColumn = isSameDay(day, today);
+            const dayStatus = dayStatuses[index];
 
             return (
               <div
                 key={day.toISOString()}
-                className={`sticky top-0 z-10 border-b border-r border-zinc-800 px-4 py-3 text-center ${
+                className={`sticky top-0 z-10 border-b border-r px-4 py-3 text-center ${
                   isTodayColumn ? "bg-zinc-900" : "bg-zinc-950"
-                }`}
+                } ${dayStatus.borderClass} ${dayStatus.columnClass}`}
               >
                 <div
                   className={`text-xs font-medium ${
@@ -256,12 +315,24 @@ export default function ScheduleGrid({
                 <div className="text-sm font-semibold text-white">
                   {formatHeaderDate(day)}
                 </div>
+
+                <div
+                  className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${dayStatus.badgeClass}`}
+                >
+                  {dayStatus.label}
+                </div>
               </div>
             );
           })}
 
           {hours.map((hour) => (
-            <HourRow key={hour} hour={hour} days={days} today={today} />
+            <HourRow
+              key={hour}
+              hour={hour}
+              days={days}
+              today={today}
+              dayStatuses={dayStatuses}
+            />
           ))}
         </div>
 
@@ -280,13 +351,14 @@ export default function ScheduleGrid({
               (block) => block.visibleDayOffset === columnIndex
             );
             const isTodayColumn = isSameDay(day, today);
+            const dayStatus = dayStatuses[columnIndex];
 
             return (
               <div
                 key={`${day.toISOString()}-overlay`}
-                className={`relative border-r border-zinc-800 ${
+                className={`relative border-r ${dayStatus.borderClass} ${
                   isTodayColumn ? "bg-blue-500/5" : ""
-                }`}
+                } ${dayStatus.columnClass}`}
               >
                 {dayBlocks.map((block) => (
                   <ScheduleBlockCard
