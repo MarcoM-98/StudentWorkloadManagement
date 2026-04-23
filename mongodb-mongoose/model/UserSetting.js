@@ -48,3 +48,6 @@ const userSettingSchema = new Schema(
         versionKey: false
     }
 );
+const UserSetting = mongoose.models.UserSetting || mongoose.model("UserSetting", userSettingSchema);
+
+export default UserSetting
