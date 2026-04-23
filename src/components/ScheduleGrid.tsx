@@ -216,6 +216,20 @@ export default function ScheduleGrid({
     timeLabelWidth: TIME_LABEL_WIDTH,
   });
 
+  const dayLoads = useMemo(() => {
+    return days.map((day, index) => {
+      const dayBlocks = visibleBlocks.filter(
+        (block) => block.visibleDayOffset === index
+      );
+
+      return dayBlocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+    });
+  }, [days, visibleBlocks]);
+
+  const dayStatuses = useMemo(() => {
+    return dayLoads.map((minutes) => getDayLoadStatus(minutes));
+  }, [dayLoads]);
+
   function handlePrevious() {
     clearMenus();
     setDayOffset((prev) => prev - 1);
@@ -238,6 +252,9 @@ export default function ScheduleGrid({
           <p className="text-sm font-medium text-zinc-400">Showing</p>
           <p className="text-base font-semibold text-white">
             {formatHeaderDate(days[0])} - {formatHeaderDate(days[days.length - 1])}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Daily capacity: {(DAILY_CAPACITY_MINUTES / 60).toFixed(0)}h
           </p>
         </div>
 
