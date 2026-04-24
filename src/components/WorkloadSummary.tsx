@@ -16,14 +16,11 @@ type WorkloadSummaryProps = {
   numberOfDays?: number;
 };
 
-type PriorityBucket = "High" | "Medium" | "Low";
-
 type DayBucket = {
   date: Date;
   label: string;
   shortDate: string;
   minutes: number;
-  priorityMinutes: Record<PriorityBucket, number>;
 };
 
 function getLocalStartOfDay(date: Date) {
@@ -58,7 +55,7 @@ function formatHours(minutes: number) {
   return (minutes / 60).toFixed(1);
 }
 
-function getPriorityBucket(task: Task): PriorityBucket {
+function getPriorityBucket(task: Task) {
   const priority = String(task.priority || "").toLowerCase();
   const custom = task.customPercentage;
 
@@ -83,11 +80,6 @@ function buildDayBuckets(startDate: Date, numberOfDays: number): DayBucket[] {
       label: date.toLocaleDateString("en-US", { weekday: "short" }),
       shortDate: `${date.getMonth() + 1}/${date.getDate()}`,
       minutes: 0,
-      priorityMinutes: {
-        High: 0,
-        Medium: 0,
-        Low: 0,
-      },
     };
   });
 }
@@ -114,20 +106,14 @@ export default function WorkloadSummary({
     );
 
     if (diffDays >= 0 && diffDays < numberOfDays) {
-      const minutes = Math.max(task.duration || 0, 0);
-      const bucket = getPriorityBucket(task);
-
-      dayBuckets[diffDays].minutes += minutes;
-      dayBuckets[diffDays].priorityMinutes[bucket] += minutes;
+      dayBuckets[diffDays].minutes += Math.max(task.duration || 0, 0);
     }
   }
 
   const totalMinutes = dayBuckets.reduce((sum, day) => sum + day.minutes, 0);
-
   const dueThisWeekCount = tasks.filter((task) => {
     const due = parseLocalDate(task.dueDate);
     if (!due) return false;
-
     const normalizedDue = getLocalStartOfDay(due);
     return normalizedDue >= visibleStart && normalizedDue <= visibleEnd;
   }).length;
@@ -137,11 +123,7 @@ export default function WorkloadSummary({
   ).length;
 
   const averageMinutes = numberOfDays > 0 ? totalMinutes / numberOfDays : 0;
-
-  const maxMinutes = Math.max(
-    ...dayBuckets.map((day) => day.minutes),
-    dailyCapacityMinutes
-  );
+  const maxMinutes = Math.max(...dayBuckets.map((day) => day.minutes), dailyCapacityMinutes);
 
   const priorityTotals = tasks.reduce(
     (acc, task) => {
@@ -149,7 +131,7 @@ export default function WorkloadSummary({
       acc[bucket] += Math.max(task.duration || 0, 0);
       return acc;
     },
-    { High: 0, Medium: 0, Low: 0 } as Record<PriorityBucket, number>
+    { High: 0, Medium: 0, Low: 0 }
   );
 
   const donutTotal =
@@ -215,20 +197,12 @@ export default function WorkloadSummary({
               const heightPercent =
                 maxMinutes > 0 ? (day.minutes / maxMinutes) * 100 : 0;
 
-              const highPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.High / day.minutes) * 100
-                  : 0;
-
-              const mediumPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.Medium / day.minutes) * 100
-                  : 0;
-
-              const lowPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.Low / day.minutes) * 100
-                  : 0;
+              const barColor =
+                day.minutes > dailyCapacityMinutes + 60
+                  ? "bg-rose-500"
+                  : day.minutes > dailyCapacityMinutes
+                  ? "bg-amber-500"
+                  : "bg-blue-500";
 
               return (
                 <div
@@ -241,68 +215,18 @@ export default function WorkloadSummary({
 
                   <div className="flex h-40 w-full items-end rounded-md bg-zinc-800/60 p-1">
                     <div
-                      className="flex w-full flex-col-reverse overflow-hidden rounded-md"
-                      style={{
-                        height: `${Math.max(
-                          heightPercent,
-                          day.minutes > 0 ? 8 : 0
-                        )}%`,
-                      }}
-                    >
-                      {lowPercent > 0 && (
-                        <div
-                          className="bg-blue-500"
-                          style={{ height: `${lowPercent}%` }}
-                          title={`Low: ${formatHours(day.priorityMinutes.Low)}h`}
-                        />
-                      )}
-
-                      {mediumPercent > 0 && (
-                        <div
-                          className="bg-amber-500"
-                          style={{ height: `${mediumPercent}%` }}
-                          title={`Medium: ${formatHours(
-                            day.priorityMinutes.Medium
-                          )}h`}
-                        />
-                      )}
-
-                      {highPercent > 0 && (
-                        <div
-                          className="bg-rose-500"
-                          style={{ height: `${highPercent}%` }}
-                          title={`High: ${formatHours(
-                            day.priorityMinutes.High
-                          )}h`}
-                        />
-                      )}
-                    </div>
+                      className={`w-full rounded-md ${barColor}`}
+                      style={{ height: `${Math.max(heightPercent, day.minutes > 0 ? 8 : 0)}%` }}
+                    />
                   </div>
 
                   <div className="mt-2 text-xs font-medium text-zinc-300">
                     {day.label}
                   </div>
-                  <div className="text-[10px] text-zinc-500">
-                    {day.shortDate}
-                  </div>
+                  <div className="text-[10px] text-zinc-500">{day.shortDate}</div>
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              High
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-              Medium
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-              Low
-            </div>
           </div>
         </div>
 
