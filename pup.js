@@ -11,6 +11,9 @@ app.use(express.static("."));
 //login gets new session 
 const sessions = new Map();
 
+//cashe coures so the code does not do a constant fetch
+const courseCashe ={};
+
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("./index.html"));
 });
@@ -47,6 +50,38 @@ function getCourseIdFromContextCode(contextCode = "") {
   return match ? match[1] : null;
 }
 
+//getting raw course name 
+async function getCourseName(page, courseId){
+  if(!courseId) return "Unkown Course";
+
+  if(courseCashe[courseId]){
+    return courseCashe[courseId];
+  }
+
+  try{
+    const course = await page.evaluate(async (courseId) =>{
+      const res = await fetch(`/api/v1/courses/${courseId}`,{
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      if(!res.ok){
+        throw new Error(`Course fetch failed: ${res.status}`);
+      }
+  return await res.json();
+    }, courseId);
+
+    const name = course?.name || course?.course_code || `Course${courseId}`;
+    courseCashe[courseId] = name;
+    return name;
+  }catch(err){
+    console.error("Course fetch error:", err.message);
+    return `Course${courseId}`;
+  }
+}
+//login starts
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -61,7 +96,7 @@ app.post("/login", async (req, res) => {
   res.redirect(`/loading?sessionID=${sessionId}`);
 
   let browser;
-
+//oAuth implementation perchance
   try {
     browser = await puppeteer.launch({
       headless: false,
@@ -237,31 +272,40 @@ app.post("/login", async (req, res) => {
 
     const assignmentsByDay = {};
 
-    enrichedAssignments.forEach((a) => {
+     for (const a of enrichedAssignments) {
       const date = a.start_at ? a.start_at.split("T")[0] : "Unknown";
 
       if (!assignmentsByDay[date]) {
         assignmentsByDay[date] = [];
       }
 
+      const courseId =
+        a.course_id ||
+        a.assignment?.course_id ||
+        getCourseIdFromContextCode(a.context_code);
+
+      const courseName = await getCourseName(loginPage, courseId);
+
       assignmentsByDay[date].push({
         title: a.title || a.fullDetails?.name || "Untitled Assignment",
+
         time: a.start_at
           ? new Date(a.start_at).toLocaleTimeString()
           : "No time",
+
         descriptionHtml: a.descriptionHtml || "",
         descriptionText: a.descriptionText || "No description",
+
         assignmentId:
           a.assignment_id ||
           a.assignment?.id ||
           a.assignment?.assignment_id ||
           null,
-        courseId:
-          a.course_id ||
-          a.assignment?.course_id ||
-          getCourseIdFromContextCode(a.context_code)
+
+        courseId,
+        courseName
       });
-    });
+    }
 
     sessions.set(sessionId, {
       finished: true,
@@ -269,6 +313,7 @@ app.post("/login", async (req, res) => {
       error: null
     });
 
+    console.log("grouped Assignments:", assignmentsByDay);
     console.log("Assignments ready");
 
     await browser.close();

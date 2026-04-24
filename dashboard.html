@@ -80,7 +80,17 @@
   </style>
 </head>
 <body>
-  <h1>Your Canvas Assignments</h1>
+  <h1>Your Canvas Assignments
+    <div class="controles">
+      <label for="sortMode">Sort assignements by:</label>
+      <select id="sortMode">
+      <option id="sortMode">
+      <option value="date">Date</option>
+      <option value="day">Day of the week</option>
+      <option value="class">Class</option>
+      </select>
+    </div>
+  </h1>
 
   <div id="error" class="error"></div>
   <div id="assignments"></div>
@@ -93,46 +103,147 @@
 
     const container = document.getElementById("assignments");
     const errorBox = document.getElementById("error");
+    const sortMode = document.getElementById("sortMode");
 
     if (data.error) {
       errorBox.textContent = data.error;
     }
 
     const assignmentsByDay = data.assignmentsByDay || {};
-    const dates = Object.keys(assignmentsByDay).sort();
 
-    if (dates.length === 0) {
+     function flattenAssignments() {
+    const allAssignments = [];
+
+    for (const date in assignmentsByDay) {
+      assignmentsByDay[date].forEach((assignment) => {
+        allAssignments.push({
+          ...assignment,
+          date,
+          dayName: new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+            weekday: "long"
+          })
+        });
+      });
+    }
+
+    return allAssignments;
+  }
+
+  function getClassName(assignment) {
+    return (
+      assignment.className ||
+      assignment.courseName ||
+      assignment.courseCode ||
+      assignment.courseId ||
+      "Unknown Class"
+    );
+  }
+
+  function groupAssignments(assignments, mode) {
+    const grouped = {};
+
+    assignments.forEach((assignment) => {
+      let key;
+
+      if (mode === "date") {
+        key = assignment.date;
+      } else if (mode === "day") {
+        key = assignment.dayName;
+      } else if (mode === "class") {
+        key = getClassName(assignment);
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+
+      grouped[key].push(assignment);
+    });
+
+    return grouped;
+  }
+
+  function sortAssignments(assignments, mode) {
+    return assignments.sort((a, b) => {
+      if (mode === "class") {
+        return getClassName(a).toString().localeCompare(getClassName(b).toString());
+      }
+
+      return new Date(a.date) - new Date(b.date);
+    });
+  }
+
+  function renderAssignments(mode = "date") {
+    container.innerHTML = "";
+
+    let allAssignments = flattenAssignments();
+    allAssignments = sortAssignments(allAssignments, mode);
+
+    const grouped = groupAssignments(allAssignments, mode);
+    let groupKeys = Object.keys(grouped);
+
+    if (mode === "date") {
+      groupKeys.sort((a, b) => new Date(a) - new Date(b));
+    } else if (mode === "day") {
+      const dayOrder = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ];
+
+      groupKeys.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+    } else if (mode === "class") {
+      groupKeys.sort();
+    }
+
+    if (groupKeys.length === 0) {
       container.innerHTML = `
         <div class="empty">
           <p>No assignments found.</p>
         </div>
       `;
-    } else {
-      dates.forEach((day) => {
-        const dayBlock = document.createElement("div");
-        dayBlock.className = "day-block";
-
-        const dayTitle = document.createElement("h2");
-        dayTitle.className = "day-title";
-        dayTitle.textContent = day;
-        dayBlock.appendChild(dayTitle);
-
-        assignmentsByDay[day].forEach((assignment) => {
-          const item = document.createElement("div");
-          item.className = "assignment";
-
-          item.innerHTML = `
-            <h3>${assignment.title}</h3>
-            <div class="meta"><strong>Time:</strong> ${assignment.time}</div>
-            <div class="description"><strong>Description:</strong> ${assignment.descriptionText}</div>
-          `;
-
-          dayBlock.appendChild(item);
-        });
-
-        container.appendChild(dayBlock);
-      });
+      return;
     }
+
+    groupKeys.forEach((group) => {
+      const dayBlock = document.createElement("div");
+      dayBlock.className = "day-block";
+
+      const title = document.createElement("h2");
+      title.className = "day-title";
+      title.textContent = group;
+      dayBlock.appendChild(title);
+
+      grouped[group].forEach((assignment) => {
+        const item = document.createElement("div");
+        item.className = "assignment";
+
+        item.innerHTML = `
+          <h3>${assignment.title}</h3>
+          <div class="meta"><strong>Date:</strong> ${assignment.date}</div>
+          <div class="meta"><strong>Day:</strong> ${assignment.dayName}</div>
+          <div class="meta"><strong>Class:</strong> ${getClassName(assignment)}</div>
+          <div class="meta"><strong>Time:</strong> ${assignment.time}</div>
+          <div class="description"><strong>Description:</strong> ${assignment.descriptionText}</div>
+        `;
+
+        dayBlock.appendChild(item);
+      });
+
+      container.appendChild(dayBlock);
+    });
+  }
+
+  sortMode.addEventListener("change", () => {
+    renderAssignments(sortMode.value);
+  });
+
+  renderAssignments("date");
+    
   </script>
 </body>
 </html>
