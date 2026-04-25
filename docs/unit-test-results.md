@@ -119,6 +119,7 @@ Notes:
 
 # Marco Mosqueda
 
+<<<<<<< HEAD
 # Test 1- Priority Calculation Override Logic
 Verified that the priority engine correctly evaluates the customPercentage field over the default priorityWord field, while successfully falling back to standard values when no override exists.
 
@@ -151,6 +152,13 @@ Ran all test suites matching docs/Marco-3Unit.test.ts.
 # Summary:
 All logic layer functions for the rescheduler and priority engine executed successfully with 0 failures. 
 The tests confirmed that the mathematical logic driving the dashboard operates as expected.
+=======
+| Test | Status |
+|------|--------|
+| Test 1 | Pending |
+| Test 2 | Pending |
+| Test 3 | Pending |
+>>>>>>> 097faf0 (SCRUM-108: Unit Test results updated KYLE)
 
 Notes:
 [Add result notes here]
