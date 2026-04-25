@@ -37,4 +37,19 @@ const sortTasksByPriority = (tasks: any[]) => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]).toHaveProperty("suggestedDate");
   });
+
+  // Unit Test 3
+  test("sortTasksByPriority sorts objects dynamically based on calculated values", () => {
+    const unorderedTasks = [
+      { title: "Task A", priority: "low" }, 
+      { title: "Task B", priority: "medium", customPercentage: 90 }, 
+      { title: "Task C", priority: "IMMEDIATE" } 
+    ];
+
+    const sorted = sortTasksByPriority(unorderedTasks);
+
+    expect(sorted[0].title).toBe("Task C");
+    expect(sorted[1].title).toBe("Task B");
+    expect(sorted[2].title).toBe("Task A");
+  });
   
