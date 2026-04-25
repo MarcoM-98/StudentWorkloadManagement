@@ -23,3 +23,18 @@ const sortTasksByPriority = (tasks: any[]) => {
     expect(calculatePriority("IMMEDIATE", null)).toBe(100);
     expect(calculatePriority("medium")).toBe(50);
   });
+
+  // Unit Test 2
+  test("suggestNewSchedule detects overload and returns delayed suggestions", () => {
+    const mockTasks = [
+      { _id: "1", title: "CS3398 Project", duration: 200, dueDate: "2026-04-25" },
+      { _id: "2", title: "Compiler Construction", duration: 150, dueDate: "2026-04-25" }
+    ];
+    const dailyLimit = 300; 
+
+    const results = suggestNewSchedule(mockTasks as any, dailyLimit);
+    
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]).toHaveProperty("suggestedDate");
+  });
+  
