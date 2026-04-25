@@ -23,6 +23,8 @@ type CalendarTask = {
   title: string;
   dueDate: string;
   duration: number;
+  priority?: string;
+  customPercentage?: number | null;
 };
 
 type PopupPosition = {
@@ -96,6 +98,8 @@ function mapTasksToScheduleBlocks(tasks: CalendarTask[]): ScheduleBlock[] {
         colorClass: getColorClass(index),
         chunkIndex: 0,
         isManuallyPlaced: false,
+        priority: task.priority,
+        customPercentage: task.customPercentage,
       } satisfies ScheduleBlock;
     })
     .filter((block): block is ScheduleBlock => block !== null);
@@ -159,12 +163,8 @@ export function useScheduleBlocks({
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
-  const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(
-    null
-  );
-  const [pendingCombine, setPendingCombine] = useState<PendingCombine | null>(
-    null
-  );
+  const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(null);
+  const [pendingCombine, setPendingCombine] = useState<PendingCombine | null>(null);
 
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -249,14 +249,13 @@ export function useScheduleBlocks({
       const proposedBlock = scheduleBlocks.find(
         (block) => block.id === dragState.blockId
       );
+
       if (!proposedBlock) {
         setDragState(null);
         return;
       }
 
-      const startingBlock =
-        scheduleBlocks.find((block) => block.id === dragState.blockId) ||
-        proposedBlock;
+      const startingBlock = proposedBlock;
 
       const allOtherBlocks = scheduleBlocks.filter(
         (block) => block.id !== dragState.blockId
