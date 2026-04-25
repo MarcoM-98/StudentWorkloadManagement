@@ -7,6 +7,7 @@ import ScheduleDayHeaderRow from "@/components/ScheduleDayHeaderRow";
 import ScheduleGridHeader from "@/components/ScheduleGridHeader";
 import ScheduleHourRows from "@/components/ScheduleHourRows";
 import { useScheduleBlocks } from "@/lib/useScheduleBlocks";
+import WorkloadSummary from "@/components/WorkloadSummary";
 import {
   buildDays,
   DAILY_CAPACITY_MINUTES,
@@ -26,6 +27,8 @@ type CalendarTask = {
   title: string;
   dueDate: string;
   duration: number;
+  priority?: string;
+  customPercentage?: number | null;
 };
 
 type ScheduleGridProps = {
@@ -118,6 +121,12 @@ export default function ScheduleGrid({
   }
 
   return (
+      <>
+    <WorkloadSummary
+      blocks={visibleBlocks}
+      startDate={visibleStartDate}
+      numberOfDays={numberOfDays}
+    />
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-950">
       <ScheduleGridHeader
         startLabel={startLabel}
@@ -275,5 +284,6 @@ export default function ScheduleGrid({
         </div>
       </div>
     </div>
+    </>
   );
 }
