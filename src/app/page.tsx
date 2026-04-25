@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
 import ScheduleGrid from "@/components/ScheduleGrid";
+import WorkloadSummary from "@/components/WorkloadSummary";
 import { suggestNewSchedule } from "@/lib/rescheduler";
 
 // We define the shape of the data thats going to show
@@ -211,31 +212,39 @@ export default function Home() {
               </div>
             ) : tasks.length > 0 ? (
 
-              tasks.map((task) => { // chang ( to { with a return( because it needs to know which suggestion belonged to which task before rendering the card.
-                const suggestion = scheduleSuggestions.find(s => s._id === (task._id?.toString() || task._id));
-                return(
-                <AssignmentCard // if it finds work/assignments get their info
-                  key={task._id}
-                  id={task._id?.toString()|| task._id} // pass the id
-                  title={task.title} 
-                  dueDate={task.dueDate} 
-                  duration={task.duration || 0} // Pass the duration
-                  priorityPercentage={calculatePriority(task.priority, task.customPercentage)} 
-                  priorityWord={task.priority} 
-                  customPercentage={task.customPercentage}
-                  onUpdate={fetchAssignments} // Pass the refresh function
-                  suggestedDate={suggestion?.suggestedDate}
-                  onAcceptSuggestion={handleAcceptSuggestion}
-                  isDelayed={suggestion?.isDelayed}
-                  isCritical={suggestion?.isCritical}
-                  courseCode={task.courseCode || ""}
-                  keywords={task.keywords || []}
-                  isActionable={task.isActionable !== false}
-                  userMajor={userSettings.major}
-                  userUniversity={userSettings.university}
-                />
-                );
-              })
+              tasks.map((task) => {
+                  const taskId = task._id?.toString() || task._id;
+
+                  const suggestion = scheduleSuggestions.find(
+                    (s) => s._id === taskId
+                  );
+
+                  return (
+                    <AssignmentCard
+                      key={taskId}
+                      id={taskId}
+                      title={task.title}
+                      dueDate={task.dueDate}
+                      duration={task.duration || 0}
+                      priorityPercentage={calculatePriority(
+                        task.priority,
+                        task.customPercentage
+                      )}
+                      priorityWord={task.priority}
+                      customPercentage={task.customPercentage}
+                      onUpdate={fetchAssignments}
+                      suggestedDate={suggestion?.suggestedDate}
+                      onAcceptSuggestion={handleAcceptSuggestion}
+                      isDelayed={suggestion?.isDelayed}
+                      isCritical={suggestion?.isCritical}
+                      courseCode={task.courseCode || ""}
+                      keywords={task.keywords || []}
+                      isActionable={task.isActionable !== false}
+                      userMajor={userSettings.major}
+                      userUniversity={userSettings.university}
+                    />
+                  );
+                })
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
                 <p className="text-zinc-500">

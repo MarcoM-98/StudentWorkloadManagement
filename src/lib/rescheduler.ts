@@ -46,12 +46,14 @@ const now = new Date().getTime();
                             // checks if the current hour is past 10 PM. If it is, or if the time limit is maxed out, it pushes the work to 9:00 AM the next day.
       minutesUsedToday = 0;
     }
-    suggestions.push({ // adds them to the end of our result list which is the array in line 17 
+    suggestions.push({
       _id: task._id, // identifies the assignment
       title: task.title,
       suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string. such as year, month, day
-       
-      isDelayed: new Date(currentDay) > new Date(task.dueDate)  // this helps the UI show a "Late" warning that we can implement ?
+
+      isDelayed: new Date(currentDay) > new Date(task.dueDate) // this helps the UI show a "Late" warning that we can implement ?
+      ,
+      isCritical: false
     });
     
     const suggestedDateObj = new Date(currentDay);

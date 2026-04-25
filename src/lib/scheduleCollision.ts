@@ -9,6 +9,8 @@ export type ScheduleBlock = {
   colorClass: string;
   chunkIndex: number;
   isManuallyPlaced: boolean;
+  priority?: string;
+  customPercentage?: number | null;
 };
 
 export type PendingConflict = {
