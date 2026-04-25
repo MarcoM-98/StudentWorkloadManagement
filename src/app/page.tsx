@@ -215,6 +215,26 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
               Current Tasks
             </h2>
+            <div className="flex flex-wrap items-center gap-3">
+                <select 
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
+                  className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="IMMEDIATE">Immediate</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="date">Sort by Due Date</option>
+                  <option value="priority">Sort by Priority</option>
+                </select>
 
             {/* overloaded badge! */}
             <div
@@ -229,6 +249,7 @@ export default function Home() {
               {isOverloaded ? "Overloaded" : "On Track"}
             </div>
           </div>
+        </div>
 
           {/* The Loading State & Task Loop */}
           <div className="flex flex-col gap-4">
@@ -238,9 +259,9 @@ export default function Home() {
                   Loading your schedule please wait...
                 </p>
               </div>
-            ) : tasks.length > 0 ? (
+            ) : filteredTasks.length > 0 ? (
 
-              tasks.map((task) => {
+              filteredTasks.map((task) => {
                   const taskId = task._id?.toString() || task._id;
 
                   const suggestion = scheduleSuggestions.find(
@@ -276,7 +297,9 @@ export default function Home() {
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
                 <p className="text-zinc-500">
-                  You are all caught up! Enjoy your day.
+                {tasks.length === 0
+                  ? "You are all caught up! Enjoy your day."
+                  : "No tasks match your current filters."}
                 </p>{" "}
                 {/* show caught up message if no work left*/}
               </div>
@@ -284,7 +307,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      </div>
+    </div>
     </DashboardLayout>
   );
 }
