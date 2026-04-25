@@ -119,11 +119,38 @@ Notes:
 
 # Marco Mosqueda
 
-| Test | Status |
-|------|--------|
-| Test 1 | Pending |
-| Test 2 | Pending |
-| Test 3 | Pending |
+# Test 1- Priority Calculation Override Logic
+Verified that the priority engine correctly evaluates the customPercentage field over the default priorityWord field, while successfully falling back to standard values when no override exists.
+
+
+# Test 2- Rescheduler Overload Detection
+Verified that the scheduling engine accurately detects when an array of tasks exceeds the daily study limit and correctly generates an array of delayed schedule suggestions.
+
+
+# Test 3- Priority Sorting Algorithm
+Verified that the sorting logic successfully orders an unordered array of tasks dynamically in descending order based on their calculated numerical priority.
+
+
+``` Text
+enchiladas@0.1.0 test
+> jest docs/Marco-3Unit.test.ts --reporters=default --reporters=jest-html-reporters
+
+ PASS  docs/Marco-3Unit.test.ts
+  ✓ calculatePriority evaluates custom percentages over text keywords (1 ms)
+  ✓ suggestNewSchedule detects overload and returns delayed suggestions (1 ms)
+  ✓ sortTasksByPriority sorts objects dynamically based on calculated values (1 ms)
+
+📦 report is created on: /Users/marcomosqueda/enchiladas/jest_html_reporters.html
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        0.253 s
+Ran all test suites matching docs/Marco-3Unit.test.ts.
+
+```
+# Summary:
+All logic layer functions for the rescheduler and priority engine executed successfully with 0 failures. 
+The tests confirmed that the mathematical logic driving the dashboard operates as expected.
 
 Notes:
 [Add result notes here]
