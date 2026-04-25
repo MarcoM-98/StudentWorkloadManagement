@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
@@ -28,6 +28,9 @@ export default function Home() {
   const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]);
   const [userSettings, setUserSettings] = useState({ university: "Texas State University", major: "Undeclared" });
   const [isSaving, setIsSaving] = useState(false);
+
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
 
   const isOverloaded = false;
 
@@ -132,6 +135,31 @@ export default function Home() {
    fetchSettings();
   }, []);
 
+  const filteredTasks = useMemo(() => {
+    let result = [...tasks];
+
+    // Filter by Priority
+    if (filterPriority !== "all") {
+      result = result.filter(task => task.priority === filterPriority);
+    }
+
+    // Sort Logic
+    result.sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortBy === "priority") {
+        // High (100) > Medium (50) > Low (20)
+        return calculatePriority(b.priority, b.customPercentage) - calculatePriority(a.priority, a.customPercentage);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [tasks, filterPriority, sortBy]);
+
+
+
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
@@ -183,7 +211,7 @@ export default function Home() {
         </div>
         
         <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
               Current Tasks
             </h2>
