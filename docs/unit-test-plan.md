@@ -58,18 +58,22 @@ Assignment Upload and Analyze Pipeline
 # Marco Mosqueda
 
 ## Feature to Test
-[Fill in feature]
+Workload Calculation, Priority Logic, and Rescheduler Engine
 
 ## Planned Tests
-1. [Test 1]  
-2. [Test 2]  
-3. [Test 3]
+1. calculatePriority logic evaluates custom percentages over text keywords and falls back to standardized integers. 
+2. suggestNewSchedule detects when an array of tasks exceeds the dailyStudyMinutes limit and generates delayed suggestions.  
+3. Priority sorting algorithm correctly sorts an unordered array of tasks dynamically in descending order.
 
 ## Code Areas
-- [File / API / Component]
+- src/lib/rescheduler.ts
+- Priority Logic Utility / Derived State Sorting
+- src/app/page.tsx (Logic layer)
 
 ## Expected Return Objects
-- [Fields checked]
+- Priority value (Integer: 100, 50, 20, or custom)
+- Array of scheduleSuggestions objects (containing isDelayed, isCritical, and suggestedDate)
+- Sorted Array of Task objects
 
 ---
 
