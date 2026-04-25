@@ -16,3 +16,10 @@ const sortTasksByPriority = (tasks: any[]) => {
     return calculatePriority(b.priority, b.customPercentage) - calculatePriority(a.priority, a.customPercentage);
   });
 };
+
+// Unit Test 1 
+  test("calculatePriority evaluates custom percentages over text keywords", () => {
+    expect(calculatePriority("low", 85)).toBe(85);
+    expect(calculatePriority("IMMEDIATE", null)).toBe(100);
+    expect(calculatePriority("medium")).toBe(50);
+  });
