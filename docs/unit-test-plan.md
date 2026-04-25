@@ -40,6 +40,7 @@ Assignment Upload and Analyze Pipeline
 # Kacin Segovia
 
 ## Feature to Test
+<<<<<<< HEAD
 MongoDB Connection Responses, Mock MongoDB CRUD for Assignment Model, and Firebase OAuth Responses
 
 ## Planned Tests
@@ -56,6 +57,21 @@ MongoDB Connection Responses, Mock MongoDB CRUD for Assignment Model, and Fireba
 - connect() returns non-null MongoClient
 - createUser returns object with _id, along with getUserById(),updateUser() with correct field
 - Returned objects are fields such as email and invalid token returns error response
+=======
+[Fill in feature]
+
+## Planned Tests
+1. [Test 1]  
+2. [Test 2]  
+3. [Test 3]
+
+## Code Areas
+- [File / API / Component]
+
+## Expected Return Objects
+- [Fields checked]
+
+>>>>>>> origin/SCRUM-109-plan-unit-tests-for-assignment
 ---
 
 # Marco Mosqueda
