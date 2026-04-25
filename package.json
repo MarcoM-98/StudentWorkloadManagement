@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest docs/Marco-3Unit.test.ts --reporters=default --reporters=jest-html-reporters"
   },
   "dependencies": {
     "mammoth": "^1.12.0",
