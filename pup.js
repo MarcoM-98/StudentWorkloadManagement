@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("."));
 
 //login gets new session 
-const sessions = new Map();
+export const sessions = new Map();
 
 //cashe coures so the code does not do a constant fetch
 const courseCashe ={};
@@ -41,7 +41,7 @@ app.get("/status", (req, res) => {
 });
 
 //helps with getting raw html instead of api garbage
-function stripHtml(html = "") {
+export function stripHtml(html = "") {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
@@ -341,7 +341,7 @@ app.post("/login", async (req, res) => {
     }, 10 * 60 * 1000);
   }
 });
-
+export default app;
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
 });

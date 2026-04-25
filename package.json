@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+<<<<<<< HEAD
     "test": "jest docs/Marco-3Unit.test.ts --reporters=default --reporters=jest-html-reporters"
+=======
+    "test" :"jest"
+>>>>>>> 97df39d (SCRUM-112 Isabel unit test and plan)
   },
   "dependencies": {
     "mammoth": "^1.12.0",
@@ -30,7 +34,11 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jest": "^30.3.0",
+<<<<<<< HEAD
     "jest-html-reporters": "^3.1.7",
+=======
+    "supertest": "^7.2.2",
+>>>>>>> 97df39d (SCRUM-112 Isabel unit test and plan)
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
     "typescript": "^5"
