@@ -17,9 +17,10 @@ Jest
 Assignment Upload and Analyze Pipeline
 
 ## Planned Tests
-1. TXT upload/analyze returns valid assignment data  
-2. PDF upload/analyze accepts file and returns parsed data  
-3. DOCX upload/analyze accepts file and returns parsed data  
+Kyle Kronk – Unit Test Plan
+1. Verify TXT, PDF, and DOCX files are accepted by upload form.
+2. Verify upload action triggers API calls to upload and analyze routes.
+3. Verify valid JSON analysis response populates assignment review fields correctly.
 
 ## Code Areas
 - /api/upload
