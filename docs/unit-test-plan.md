@@ -40,19 +40,22 @@ Assignment Upload and Analyze Pipeline
 # Kacin Segovia
 
 ## Feature to Test
-[Fill in feature]
+MongoDB Connection Responses, Mock MongoDB CRUD for Assignment Model, and Firebase OAuth Responses
 
 ## Planned Tests
-1. [Test 1]  
-2. [Test 2]  
-3. [Test 3]
+1. MongoDB Connection returns valid GET/POST   
+2. Create, Read, Update, and Delete, return correct insertion of objects from models for expected fields  
+3. Valid token returns profile and invalid throws authentication error
 
 ## Code Areas
-- [File / API / Component]
+- mongodb-mongoose/db
+- mongodb-mongoose/assignmentCLI
+- react-firebase/src/authContext/index
 
 ## Expected Return Objects
-- [Fields checked]
-
+- connect() returns non-null MongoClient
+- createUser returns object with _id, along with getUserById(),updateUser() with correct field
+- Returned objects are fields such as email and invalid token returns error response
 ---
 
 # Marco Mosqueda
