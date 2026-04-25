@@ -143,7 +143,6 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">
               Schedule View
             </h2>
-            <WorkloadSummary tasks={tasks} />
             <ScheduleGrid tasks={tasks} />
           </div>
 

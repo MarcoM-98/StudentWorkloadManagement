@@ -1,22 +1,22 @@
 "use client";
 
-type Task = {
-  _id: string;
+type PriorityBucket = "High" | "Medium" | "Low";
+
+type ScheduleSummaryBlock = {
+  id: string;
   title: string;
-  dueDate: string;
-  duration: number;
+  blockDate: string;
+  durationMinutes: number;
   priority?: string;
   customPercentage?: number | null;
 };
 
 type WorkloadSummaryProps = {
-  tasks: Task[];
+  blocks: ScheduleSummaryBlock[];
   dailyCapacityMinutes?: number;
   startDate?: Date;
   numberOfDays?: number;
 };
-
-type PriorityBucket = "High" | "Medium" | "Low";
 
 type DayBucket = {
   date: Date;
@@ -26,41 +26,20 @@ type DayBucket = {
   priorityMinutes: Record<PriorityBucket, number>;
 };
 
-function getLocalStartOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function parseLocalDate(dateString: string) {
-  if (!dateString) return null;
-
-  const trimmed = String(dateString).trim();
-
-  if (trimmed.includes("T")) {
-    const datePart = trimmed.split("T")[0];
-    const [year, month, day] = datePart.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const [year, month, day] = trimmed.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
-    const [month, day, year] = trimmed.split("/").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  return null;
+function formatDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatHours(minutes: number) {
   return (minutes / 60).toFixed(1);
 }
 
-function getPriorityBucket(task: Task): PriorityBucket {
-  const priority = String(task.priority || "").toLowerCase();
-  const custom = task.customPercentage;
+function getPriorityBucket(block: ScheduleSummaryBlock): PriorityBucket {
+  const priority = String(block.priority || "").toLowerCase();
+  const custom = block.customPercentage;
 
   if (custom !== null && custom !== undefined) {
     if (custom >= 80) return "High";
@@ -93,49 +72,37 @@ function buildDayBuckets(startDate: Date, numberOfDays: number): DayBucket[] {
 }
 
 export default function WorkloadSummary({
-  tasks,
+  blocks,
   dailyCapacityMinutes = 360,
   startDate = new Date(),
   numberOfDays = 7,
 }: WorkloadSummaryProps) {
-  const visibleStart = getLocalStartOfDay(startDate);
+  const visibleStart = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+
   const visibleEnd = new Date(visibleStart);
   visibleEnd.setDate(visibleStart.getDate() + numberOfDays - 1);
 
   const dayBuckets = buildDayBuckets(visibleStart, numberOfDays);
 
-  for (const task of tasks) {
-    const due = parseLocalDate(task.dueDate);
-    if (!due) continue;
+  for (const block of blocks) {
+    const day = dayBuckets.find((bucket) => formatDateKey(bucket.date) === block.blockDate);
+    if (!day) continue;
 
-    const normalizedDue = getLocalStartOfDay(due);
-    const diffDays = Math.round(
-      (normalizedDue.getTime() - visibleStart.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const minutes = Math.max(block.durationMinutes || 0, 0);
+    const bucket = getPriorityBucket(block);
 
-    if (diffDays >= 0 && diffDays < numberOfDays) {
-      const minutes = Math.max(task.duration || 0, 0);
-      const bucket = getPriorityBucket(task);
-
-      dayBuckets[diffDays].minutes += minutes;
-      dayBuckets[diffDays].priorityMinutes[bucket] += minutes;
-    }
+    day.minutes += minutes;
+    day.priorityMinutes[bucket] += minutes;
   }
 
   const totalMinutes = dayBuckets.reduce((sum, day) => sum + day.minutes, 0);
-
-  const dueThisWeekCount = tasks.filter((task) => {
-    const due = parseLocalDate(task.dueDate);
-    if (!due) return false;
-
-    const normalizedDue = getLocalStartOfDay(due);
-    return normalizedDue >= visibleStart && normalizedDue <= visibleEnd;
-  }).length;
-
   const overloadedDays = dayBuckets.filter(
     (day) => day.minutes > dailyCapacityMinutes + 60
   ).length;
-
   const averageMinutes = numberOfDays > 0 ? totalMinutes / numberOfDays : 0;
 
   const maxMinutes = Math.max(
@@ -143,10 +110,10 @@ export default function WorkloadSummary({
     dailyCapacityMinutes
   );
 
-  const priorityTotals = tasks.reduce(
-    (acc, task) => {
-      const bucket = getPriorityBucket(task);
-      acc[bucket] += Math.max(task.duration || 0, 0);
+  const priorityTotals = blocks.reduce(
+    (acc, block) => {
+      const bucket = getPriorityBucket(block);
+      acc[bucket] += Math.max(block.durationMinutes || 0, 0);
       return acc;
     },
     { High: 0, Medium: 0, Low: 0 } as Record<PriorityBucket, number>
@@ -187,8 +154,8 @@ export default function WorkloadSummary({
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
-          <p className="text-sm text-zinc-400">Due This Week</p>
-          <p className="mt-2 text-2xl font-bold text-white">{dueThisWeekCount}</p>
+          <p className="text-sm text-zinc-400">Scheduled Blocks</p>
+          <p className="mt-2 text-2xl font-bold text-white">{blocks.length}</p>
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
@@ -216,19 +183,11 @@ export default function WorkloadSummary({
                 maxMinutes > 0 ? (day.minutes / maxMinutes) * 100 : 0;
 
               const highPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.High / day.minutes) * 100
-                  : 0;
-
+                day.minutes > 0 ? (day.priorityMinutes.High / day.minutes) * 100 : 0;
               const mediumPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.Medium / day.minutes) * 100
-                  : 0;
-
+                day.minutes > 0 ? (day.priorityMinutes.Medium / day.minutes) * 100 : 0;
               const lowPercent =
-                day.minutes > 0
-                  ? (day.priorityMinutes.Low / day.minutes) * 100
-                  : 0;
+                day.minutes > 0 ? (day.priorityMinutes.Low / day.minutes) * 100 : 0;
 
               return (
                 <div
@@ -243,38 +202,17 @@ export default function WorkloadSummary({
                     <div
                       className="flex w-full flex-col-reverse overflow-hidden rounded-md"
                       style={{
-                        height: `${Math.max(
-                          heightPercent,
-                          day.minutes > 0 ? 8 : 0
-                        )}%`,
+                        height: `${Math.max(heightPercent, day.minutes > 0 ? 8 : 0)}%`,
                       }}
                     >
                       {lowPercent > 0 && (
-                        <div
-                          className="bg-blue-500"
-                          style={{ height: `${lowPercent}%` }}
-                          title={`Low: ${formatHours(day.priorityMinutes.Low)}h`}
-                        />
+                        <div className="bg-blue-500" style={{ height: `${lowPercent}%` }} />
                       )}
-
                       {mediumPercent > 0 && (
-                        <div
-                          className="bg-amber-500"
-                          style={{ height: `${mediumPercent}%` }}
-                          title={`Medium: ${formatHours(
-                            day.priorityMinutes.Medium
-                          )}h`}
-                        />
+                        <div className="bg-amber-500" style={{ height: `${mediumPercent}%` }} />
                       )}
-
                       {highPercent > 0 && (
-                        <div
-                          className="bg-rose-500"
-                          style={{ height: `${highPercent}%` }}
-                          title={`High: ${formatHours(
-                            day.priorityMinutes.High
-                          )}h`}
-                        />
+                        <div className="bg-rose-500" style={{ height: `${highPercent}%` }} />
                       )}
                     </div>
                   </div>
@@ -282,27 +220,10 @@ export default function WorkloadSummary({
                   <div className="mt-2 text-xs font-medium text-zinc-300">
                     {day.label}
                   </div>
-                  <div className="text-[10px] text-zinc-500">
-                    {day.shortDate}
-                  </div>
+                  <div className="text-[10px] text-zinc-500">{day.shortDate}</div>
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              High
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-              Medium
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-              Low
-            </div>
           </div>
         </div>
 
@@ -323,39 +244,35 @@ export default function WorkloadSummary({
             </div>
 
             <div className="w-full max-w-xs space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-rose-500" />
-                  <span className="text-sm text-zinc-300">High</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  {formatHours(priorityTotals.High)}h
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-amber-500" />
-                  <span className="text-sm text-zinc-300">Medium</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  {formatHours(priorityTotals.Medium)}h
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-blue-500" />
-                  <span className="text-sm text-zinc-300">Low</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  {formatHours(priorityTotals.Low)}h
-                </span>
-              </div>
+              <PriorityRow color="bg-rose-500" label="High" minutes={priorityTotals.High} />
+              <PriorityRow color="bg-amber-500" label="Medium" minutes={priorityTotals.Medium} />
+              <PriorityRow color="bg-blue-500" label="Low" minutes={priorityTotals.Low} />
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PriorityRow({
+  color,
+  label,
+  minutes,
+}: {
+  color: string;
+  label: string;
+  minutes: number;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span className={`h-3 w-3 rounded-full ${color}`} />
+        <span className="text-sm text-zinc-300">{label}</span>
+      </div>
+      <span className="text-sm font-semibold text-white">
+        {formatHours(minutes)}h
+      </span>
     </div>
   );
 }
