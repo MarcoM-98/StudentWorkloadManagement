@@ -139,7 +139,13 @@ export default function Home() {
   const handleOptimizeSchedule = () => {
     const minutesSpent = completedTasks.reduce((sum, task) => sum + (task.duration || 0), 0);
     const remainingDailyLimit = Math.max(300 - minutesSpent, 0);
-    const results = suggestNewSchedule(activeTasks, remainingDailyLimit); // Run the math/reschedule engine
+    
+    const tasksForMath = activeTasks.map(task => ({ // If a task has a plannedDate, temporarily make it the dueDate so the math engine respects it
+      ...task,
+      dueDate: task.plannedDate ? task.plannedDate : task.dueDate
+    }));
+
+    const results = suggestNewSchedule(tasksForMath, remainingDailyLimit); // Run the math/reschedule engine
     setScheduleSuggestions(results); // save the results to the state
     console.log("Optimization calculated successfully!");
   };
@@ -213,7 +219,7 @@ export default function Home() {
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <OverloadBanner /> {/* overload banner warning*/}
+        <OverloadBanner tasks={activeTasks} /> {/* overload banner warning*/}
         
         <DailyQuote />
         <WeeklyStats completedTasks={completedTasks.length} /> 

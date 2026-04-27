@@ -32,13 +32,26 @@ userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentP
 
     const [showHelp, setShowHelp] = useState(false);
     const resources = generateResources(userUniversity, userMajor, courseCode, title, keywords);
+
+    // 1. Safe display for text (e.g., "5/1/2026")
+    const safeFormatDate = (dateString?: string) => {
+        if (!dateString) return "No date";
+        const [year, month, day] = dateString.split('T')[0].split('-');
+        return `${Number(month)}/${Number(day)}/${year}`;
+    };
+
+    // 2. Safe display for the Edit Form Input (e.g., "2026-05-01")
+    const formatForInput = (dateString?: string) => {
+        if (!dateString) return "";
+        return dateString.split('T')[0];
+    };
     
     // state initialization with fallbacks to prevent "uncontrolled" errors such as empty string or 0 on duration 
     // also react does not like when an input switches from an uncontrolled to a controlled value
     // so this function will use a fallback that if data is missing it stays "controlled" (with a fallback value)
     const [editData, setEditData] = useState({
         title: title || "",
-        dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
+        dueDate: formatForInput(dueDate),
         duration: (duration ?? duration > 0) ? duration : 60,
         priority: priorityWord || "low",
         customPercentage: customPercentage ?? null
@@ -167,7 +180,7 @@ if (isEditing) {
                 onClick={(e) => { e.stopPropagation();   // Reset the typing back to to what it was before
                         setEditData({
                             title: title || "",
-                            dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "",
+                            dueDate: formatForInput(dueDate),
                             duration: (duration ?? duration > 0) ? duration : 60,
                             priority: priorityWord || "low",
                             customPercentage: customPercentage ?? null
@@ -201,17 +214,19 @@ if (isEditing) {
             <>
               {/* If they accepted a suggestion, show their Planned date as primary */}
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                Planned For: {new Date(plannedDate).toLocaleDateString()}
+                Planned For: {safeFormatDate(plannedDate)}
               </p>
               <p className="text-xs text-zinc-500 line-through">
-                Official Deadline: {new Date(dueDate).toLocaleDateString()}
+                Official Deadline: {safeFormatDate(dueDate)}
               </p>
             </>
           ) : (
-        <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
+        <p className="text-sm text-zinc-500">
+              Due: {safeFormatDate(dueDate)} • {duration} mins
+            </p>
         )}
         </div>
-       {suggestedDate && (
+       {suggestedDate && !plannedDate && (
         <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
           isDelayed ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
           isCritical ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200' : 
@@ -231,7 +246,7 @@ if (isEditing) {
             'text-blue-600'
           }`}>
 
-            Reschedule to: {new Date(suggestedDate).toLocaleDateString()}
+            Reschedule to: {safeFormatDate(suggestedDate)}
           </p>
         </div>
         <button
