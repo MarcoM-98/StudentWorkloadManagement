@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 // fallback quotes in case API is down
 const FALLBACK_QUOTES = [
-  { content: "The secret of getting ahead is getting started.", author: "Mark Twain" },
-  { content: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-  { content: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-  { content: "Quality is not an act, it is a habit.", author: "Aristotle" },
-  { content: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-  { content: "Failure is the opportunity to begin again more intelligently.", author: "Henry Ford" }
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { quote: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { quote: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { quote: "Failure is the opportunity to begin again more intelligently.", author: "Henry Ford" }
 ];
 export default function DailyQuote() {
   const [quote, setQuote] = useState("Loading inspiration...");
@@ -18,17 +18,17 @@ export default function DailyQuote() {
     setMounted(true);
     async function fetchQuote() {
       try {
-        const response = await fetch("https://api.quotable.io/quotes/random?tags=motivational|inspirational");
+        const response = await fetch("https://quoteslate.vercel.app/api/quotes/random?tags=motivation,wisdom,inspirational");
         if (!response.ok) throw new Error("API Failed");
         const data = await response.json();
-        setQuote(data[0].content);
-        setAuthor(data[0].author);
+        setQuote(data.quote);
+        setAuthor(data.author);
       } catch (error) {
-        // 2. If the internet or API fails, do this instead:
+        // If the internet or API fails, do this instead:
         const randomIndex = Math.floor(Math.random() * FALLBACK_QUOTES.length);
         const randomQuote = FALLBACK_QUOTES[randomIndex];
         
-        setQuote(randomQuote.content);
+        setQuote(randomQuote.quote);
         setAuthor(randomQuote.author);
       }
     }

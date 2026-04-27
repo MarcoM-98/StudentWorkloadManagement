@@ -6,6 +6,8 @@ import OverloadBanner from "@/components/OverloadBanner";
 import ScheduleGrid from "@/components/ScheduleGrid";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { suggestNewSchedule } from "@/lib/rescheduler";
+import DailyQuote from "@/components/DailyQuote";
+import WeeklyStats from "@/components/WeeklyStats";
 
 // We define the shape of the data thats going to show
 type Task = {
@@ -165,6 +167,10 @@ export default function Home() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         <OverloadBanner /> {/* overload banner warning*/}
+        
+        <DailyQuote />
+        <WeeklyStats completedTasks={5} /> 
+
 
         <div className="mt-6">
           <div className="mb-8">
