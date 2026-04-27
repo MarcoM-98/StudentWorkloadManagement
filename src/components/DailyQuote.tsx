@@ -18,7 +18,7 @@ export default function DailyQuote() {
     setMounted(true);
     async function fetchQuote() {
       try {
-        const response = await fetch("https://quoteslate.vercel.app/api/quotes/random?tags=motivation,wisdom,inspirational");
+        const response = await fetch("https://quoteslate.vercel.app/api/quotes/random?tags=motivation,life,inspiration");
         if (!response.ok) throw new Error("API Failed");
         const data = await response.json();
         setQuote(data.quote);

@@ -21,6 +21,7 @@ type Task = {
   courseCode?: string; 
   keywords?: string[]; 
   isActionable?: boolean;
+  completed?: boolean;
 };
 
 export default function Home() {
@@ -89,6 +90,22 @@ export default function Home() {
     }
     setIsSaving(false);
   }
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: true }), 
+      });
+
+      if (response.ok) {
+        await fetchAssignments(); // Re-fetch to update the UI instantly
+      }
+    } catch (error) {
+      console.error("Failed to mark task as completed:", error);
+    }
+  };
 
     const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
     if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
