@@ -45,6 +45,9 @@ export async function POST(req) {
       priority: "medium",
       customPercentage: null,
       duration: Number(body.duration) || 0,
+      courseCode: body.courseCode || "",   
+      keywords: body.keywords || [],       
+      isActionable: body.isActionable !== false
     });
 
     return NextResponse.json(newAssignment, { status: 201 });
