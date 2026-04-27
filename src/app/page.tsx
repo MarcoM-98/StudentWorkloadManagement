@@ -154,8 +154,18 @@ export default function Home() {
    fetchSettings();
   }, []);
 
+  //  Split the tasks into Active and Completed
+  const activeTasks = useMemo(() => {
+    return tasks.filter(task => task.completed !== true);
+  }, [tasks]);
+
+  const completedTasksCount = useMemo(() => {
+    return tasks.filter(task => task.completed === true).length;
+  }, [tasks]);
+
+  // only sort and filter the activeTasks
   const filteredTasks = useMemo(() => {
-    let result = [...tasks];
+    let result = [...activeTasks];
 
     // Filter by Priority
     if (filterPriority !== "all") {
@@ -186,7 +196,7 @@ export default function Home() {
         <OverloadBanner /> {/* overload banner warning*/}
         
         <DailyQuote />
-        <WeeklyStats completedTasks={5} /> 
+        <WeeklyStats completedTasks={completedTasksCount} /> 
 
 
         <div className="mt-6">
@@ -314,6 +324,7 @@ export default function Home() {
                       isActionable={task.isActionable !== false}
                       userMajor={userSettings.major}
                       userUniversity={userSettings.university}
+                      onComplete={() => handleCompleteTask(taskId)}
                     />
                   );
                 })

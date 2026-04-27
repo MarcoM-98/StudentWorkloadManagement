@@ -19,12 +19,13 @@ type AssignmentProps = {
     isActionable?: boolean;
     userMajor?: string;
     userUniversity?: string;
+    onComplete?: () => void;
 
 };
 
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
 suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
-userUniversity = "Texas State University"}: AssignmentProps) {
+userUniversity = "Texas State University", onComplete}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -235,11 +236,20 @@ if (isEditing) {
   </div>
         )}
         </div>
-      <div className="flex flex-col items-end">
+      <div className="flex flex-col items-end gap-2">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
           Priority: {priorityPercentage}%
         </span>
-      </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // Prevents the card from opening edit mode
+            if (onComplete) onComplete(); 
+          }}
+          className="px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 border border-green-200 dark:border-green-800 text-xs font-bold rounded-md transition-colors"
+        >
+          ✓ Mark as Done
+        </button>
+    </div>
     </div>
 
         {/* the UI for the smart links/assistant */}
