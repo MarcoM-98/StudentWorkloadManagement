@@ -108,6 +108,22 @@ export default function Home() {
     }
   };
 
+  const handleUndoTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: false }), //  Sets it back to false
+      });
+
+      if (response.ok) {
+        await fetchAssignments();
+      }
+    } catch (error) {
+      console.error("Failed to undo task:", error);
+    }
+  };
+
     const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
     if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
         return customNumber; 
@@ -361,10 +377,19 @@ export default function Home() {
                       <div>
                         <span className="line-through text-zinc-500 font-medium">{task.title}</span>
                         <span className="ml-3 text-xs text-zinc-400">{task.duration} mins</span>
+                        {/* button for undo or done*/}
                       </div>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => handleUndoTask(task._id?.toString() || task.id.toString())}
+                          className="text-xs text-zinc-400 hover:text-blue-500 font-bold transition-colors"
+                        >
+                          ↩ Undo
+                        </button>
                       <span className="text-xs text-green-600 dark:text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
                         ✓ Done
                       </span>
+                    </div>
                     </div>
                   ))}
                 </div>
