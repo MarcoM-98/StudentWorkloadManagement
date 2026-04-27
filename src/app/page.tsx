@@ -22,6 +22,7 @@ type Task = {
   keywords?: string[]; 
   isActionable?: boolean;
   completed?: boolean;
+  plannedDate?: string;
 };
 
 export default function Home() {
@@ -149,7 +150,7 @@ export default function Home() {
         //send a PATCH request to API route/mongodb because we want to suggest a new date
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
+        body: JSON.stringify({ plannedDate: newDate }), // We overwrite the old date with the suggestion
       });
       if (response.ok) {
         await fetchAssignments(); // Refresh the list so the UI shows the updated official date
@@ -344,6 +345,7 @@ export default function Home() {
                       userMajor={userSettings.major}
                       userUniversity={userSettings.university}
                       onComplete={() => handleCompleteTask(taskId)}
+                      plannedDate={task.plannedDate}
                     />
                   );
                 })

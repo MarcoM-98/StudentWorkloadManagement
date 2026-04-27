@@ -20,12 +20,13 @@ type AssignmentProps = {
     userMajor?: string;
     userUniversity?: string;
     onComplete?: () => void;
+    plannedDate?: string;
 
 };
 
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
 suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
-userUniversity = "Texas State University", onComplete}: AssignmentProps) {
+userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -195,7 +196,21 @@ if (isEditing) {
      <div className="flex justify-between items-start">
       <div>
         <h3 className="text-md font-bold">{title}</h3>
+        <div className="flex flex-col mt-1">
+          {plannedDate ? (
+            <>
+              {/* If they accepted a suggestion, show their Planned date as primary */}
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                Planned For: {new Date(plannedDate).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-zinc-500 line-through">
+                Official Deadline: {new Date(dueDate).toLocaleDateString()}
+              </p>
+            </>
+          ) : (
         <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
+        )}
+        </div>
        {suggestedDate && (
         <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
           isDelayed ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
