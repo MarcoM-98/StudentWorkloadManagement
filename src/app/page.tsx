@@ -34,6 +34,7 @@ export default function Home() {
 
   const [filterPriority, setFilterPriority] = useState("all");
   const [sortBy, setSortBy] = useState("date");
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const isOverloaded = false;
 
@@ -119,7 +120,9 @@ export default function Home() {
   };
 
   const handleOptimizeSchedule = () => {
-    const results = suggestNewSchedule(tasks, 300); // Run the math/reschedule engine set to 300 minutes just like on OverloadBanner
+    const minutesSpent = completedTasks.reduce((sum, task) => sum + (task.duration || 0), 0);
+    const remainingDailyLimit = Math.max(300 - minutesSpent, 0);
+    const results = suggestNewSchedule(activeTasks, remainingDailyLimit); // Run the math/reschedule engine
     setScheduleSuggestions(results); // save the results to the state
     console.log("Optimization calculated successfully!");
   };
@@ -159,8 +162,8 @@ export default function Home() {
     return tasks.filter(task => task.completed !== true);
   }, [tasks]);
 
-  const completedTasksCount = useMemo(() => {
-    return tasks.filter(task => task.completed === true).length;
+  const completedTasks = useMemo(() => {
+    return tasks.filter(task => task.completed === true);
   }, [tasks]);
 
   // only sort and filter the activeTasks
@@ -196,7 +199,7 @@ export default function Home() {
         <OverloadBanner /> {/* overload banner warning*/}
         
         <DailyQuote />
-        <WeeklyStats completedTasks={completedTasksCount} /> 
+        <WeeklyStats completedTasks={completedTasks.length} /> 
 
 
         <div className="mt-6">
@@ -339,6 +342,35 @@ export default function Home() {
               </div>
             )}
           </div>
+          {completedTasks.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-white font-bold transition-colors outline-none"
+              >
+                {showCompleted ? "▼ Hide" : "▶ Show"} Completed Assignments ({completedTasks.length})
+              </button>
+
+              {showCompleted && (
+                <div className="mt-4 flex flex-col gap-3 opacity-60"> 
+                  {completedTasks.map((task) => (
+                    <div 
+                      key={task._id} 
+                      className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg flex justify-between items-center border border-zinc-200 dark:border-zinc-800"
+                    >
+                      <div>
+                        <span className="line-through text-zinc-500 font-medium">{task.title}</span>
+                        <span className="ml-3 text-xs text-zinc-400">{task.duration} mins</span>
+                      </div>
+                      <span className="text-xs text-green-600 dark:text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        ✓ Done
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
