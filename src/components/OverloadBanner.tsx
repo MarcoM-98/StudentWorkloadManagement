@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { withFirebaseUserHeaders } from "@/lib/apiHeaders";
 
 type SavedAssignment = {
   _id: string;
@@ -19,14 +21,23 @@ type OverloadResult = {
 };
 
 export default function OverloadBanner() {
+  const { currentUser } = useAuth();
   const [data, setData] = useState<OverloadResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadOverloadData() {
+      if (!currentUser?.uid) {
+        setData(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetch("/api/assignments");
+        const response = await fetch("/api/assignments", {
+          headers: withFirebaseUserHeaders(currentUser.uid),
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch assignments");
@@ -60,7 +71,7 @@ export default function OverloadBanner() {
           windowStart,
           windowEnd,
         });
-      } catch (err) {
+      } catch {
         setError("Could not load workload status");
       } finally {
         setLoading(false);
@@ -68,7 +79,7 @@ export default function OverloadBanner() {
     }
 
     loadOverloadData();
-  }, []);
+  }, [currentUser?.uid]);
 
   if (loading) return null;
   if (error) return null;
