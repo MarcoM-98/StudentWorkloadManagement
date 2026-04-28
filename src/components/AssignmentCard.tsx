@@ -1,6 +1,8 @@
 "use client";
 import {useState, useEffect} from "react"; // added useEffect to synchronize saving with an external system (mongodb)
 import { generateResources } from "@/lib/resourceGenerator";
+import { useAuth } from "@/contexts/AuthContext";
+import { withFirebaseUserHeaders } from "@/lib/apiHeaders";
 type AssignmentProps = {
     id: string; // mongodb _id
     title: string;
@@ -25,6 +27,7 @@ type AssignmentProps = {
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
 suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
 userUniversity = "Texas State University"}: AssignmentProps) {
+    const { currentUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -49,9 +52,13 @@ userUniversity = "Texas State University"}: AssignmentProps) {
         const delayDebounceFn = setTimeout(async () => { // Start a 1-second timer of inactivity before executing
             setIsSaving(true); // show a "Saving..." indicator to the user
             try { // try block to sends an asynchronous network request to our route using the specific assignment ID
+                if (!currentUser?.uid) {
+                    return;
+                }
+
                 const response = await fetch(`/api/assignments/${id}`, {
                     method: 'PATCH',  // Specifies a partial update (PATCH) rather than replacing the whole document like title, date,time etc
-                    headers: { 'Content-Type': 'application/json' }, // tells the server to expect a json formatted data/file
+                    headers: withFirebaseUserHeaders(currentUser.uid, { 'Content-Type': 'application/json' }), // tells the server to expect a json formatted data/file
                     body: JSON.stringify({ // Converts our JavaScript object into a string for transmission except duration, it will be sent as a number
                         title: editData.title,
                         dueDate: editData.dueDate,
@@ -75,7 +82,7 @@ userUniversity = "Texas State University"}: AssignmentProps) {
         // this line kills the old timer and resets the clock.
         return () => clearTimeout(delayDebounceFn);
 
-    }, [editData, isEditing, id]); // Dependency Array: Tells React to re-run this entire block whenever any of these 4 values change
+    }, [currentUser?.uid, editData, isEditing, id, onUpdate]); // Dependency Array: Tells React to re-run this entire block whenever any of these 4 values change
 
         const handleSave = (e: React.MouseEvent) => {
             e.stopPropagation();
