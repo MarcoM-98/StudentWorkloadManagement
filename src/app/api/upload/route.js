@@ -1,9 +1,8 @@
 // NextResponse lets us return JSON responses from a Next.js API route
 import { NextResponse } from "next/server";
-
-// Node.js modules used to store files on the server
-import fs from "fs";
-import path from "path";
+import { connectDB } from "../../../../mongodb-mongoose/db.js";
+import UploadedDocument from "../../../../mongodb-mongoose/model/UploadedDocument.js";
+import { requireFirebaseUserId } from "@/lib/requestUser";
 
 /*
   POST handler for the upload API.
@@ -15,6 +14,13 @@ import path from "path";
 */
 export async function POST(req) {
   try {
+    const { userId, errorResponse } = requireFirebaseUserId(req);
+
+    if (errorResponse) {
+      return errorResponse;
+    }
+
+    await connectDB();
 
     // Convert the request body into form data
     // This is required because file uploads use multipart/form-data
@@ -72,30 +78,13 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    /*
-      Determine where uploaded files will be stored.
-
-      process.cwd() = project root directory
-    */
-    const uploadDir = path.join(process.cwd(), "uploads");
-    
-    // If the uploads folder does not exist yet, create it
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-
-    /*
-      Create the full path where the file will be saved.
-
-      Example result:
-      /uploads/assignment1.pdf
-    */
-
-    const uniqueName = `${Date.now()}-${file.name}`;
-    const filePath = path.join(uploadDir, uniqueName);
-
-    // Write the file to the uploads folder
-    fs.writeFileSync(filePath, buffer);
+    const savedDocument = await UploadedDocument.create({
+      userId,
+      originalName: file.name,
+      mimeType: file.type,
+      size: file.size,
+      data: buffer,
+    });
 
     /*
       Send a success response back to the frontend.
@@ -105,7 +94,8 @@ export async function POST(req) {
     */
     return NextResponse.json({
       success: true,
-      filename: uniqueName
+      documentId: savedDocument._id.toString(),
+      filename: savedDocument.originalName
     });
 
 
