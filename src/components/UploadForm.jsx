@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import AssignmentReviewForm from "./AssignmentReviewForm";
 import SavedAssignmentsList from "./SavedAssignmentsList";
+import { useAuth } from "@/contexts/AuthContext";
+import { withFirebaseUserHeaders } from "@/lib/apiHeaders";
 
 function normalizeDateForInput(dateString) {
   if (!dateString) return "";
@@ -35,6 +37,7 @@ function mapAssignmentFromDb(assignment) {
 }
 
 export default function UploadForm() {
+  const { currentUser } = useAuth();
   const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
@@ -68,29 +71,36 @@ export default function UploadForm() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  async function fetchSavedAssignments() {
-    try {
-      const response = await fetch("/api/assignments");
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch assignments from database.");
+  useEffect(() => {
+    async function loadSavedAssignments() {
+      if (!currentUser?.uid) {
+        setSavedAssignments([]);
+        return;
       }
 
-      const data = await response.json();
-      const normalizedAssignments = Array.isArray(data)
-        ? data.map(mapAssignmentFromDb)
-        : [];
+      try {
+        const response = await fetch("/api/assignments", {
+          headers: withFirebaseUserHeaders(currentUser.uid),
+        });
 
-      setSavedAssignments(normalizedAssignments);
-    } catch (error) {
-      console.error("Failed to load assignments:", error);
-      setMessage("Could not load saved assignments from database.");
+        if (!response.ok) {
+          throw new Error("Failed to fetch assignments from database.");
+        }
+
+        const data = await response.json();
+        const normalizedAssignments = Array.isArray(data)
+          ? data.map(mapAssignmentFromDb)
+          : [];
+
+        setSavedAssignments(normalizedAssignments);
+      } catch (error) {
+        console.error("Failed to load assignments:", error);
+        setMessage("Could not load saved assignments from database.");
+      }
     }
-  }
 
-  useEffect(() => {
-    fetchSavedAssignments();
-  }, []);
+    loadSavedAssignments();
+  }, [currentUser?.uid]);
 
   function handleSelectedFile(selectedFile) {
     if (!selectedFile) return;
@@ -143,6 +153,7 @@ export default function UploadForm() {
     try {
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
+        headers: withFirebaseUserHeaders(currentUser?.uid || ""),
         body: formData,
       });
 
@@ -157,11 +168,11 @@ export default function UploadForm() {
 
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
+        headers: withFirebaseUserHeaders(currentUser?.uid || "", {
           "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({
-          filename: uploadData.filename,
+          documentId: uploadData.documentId,
         }),
       });
 
@@ -225,11 +236,16 @@ export default function UploadForm() {
 
         setSavedAssignments(updatedAssignments);
       } else {
+        if (!currentUser?.uid) {
+          setMessage("You must be signed in to save assignments.");
+          return;
+        }
+
         const response = await fetch("/api/assignments", {
           method: "POST",
-          headers: {
+          headers: withFirebaseUserHeaders(currentUser.uid, {
             "Content-Type": "application/json",
-          },
+          }),
           body: JSON.stringify(reviewedAssignment),
         });
 
@@ -260,11 +276,16 @@ export default function UploadForm() {
 
   async function handleSaveEdit(id, updatedFields) {
     try {
+      if (!currentUser?.uid) {
+        setMessage("You must be signed in to update assignments.");
+        return;
+      }
+
       const response = await fetch(`/api/assignments/${id}`, {
         method: "PATCH",
-        headers: {
+        headers: withFirebaseUserHeaders(currentUser.uid, {
           "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({
           title: updatedFields.title,
           duration: Number(updatedFields.minutes),
@@ -296,8 +317,14 @@ export default function UploadForm() {
 
   async function handleDeleteAssignment(id) {
     try {
+      if (!currentUser?.uid) {
+        setMessage("You must be signed in to delete assignments.");
+        return;
+      }
+
       const response = await fetch(`/api/assignments/${id}`, {
         method: "DELETE",
+        headers: withFirebaseUserHeaders(currentUser.uid),
       });
 
       const data = await response.json();
