@@ -1,120 +1,313 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
 import ScheduleGrid from "@/components/ScheduleGrid";
+import { suggestNewSchedule } from "@/lib/rescheduler";
+import { useAuth } from "@/contexts/AuthContext";
+import { withFirebaseUserHeaders } from "@/lib/apiHeaders";
 
-// We define the shape of the data thats going to show
 type Task = {
   _id: string;
   title: string;
   dueDate: string;
   priority: string;
-  customPercentage?: number | null; // ? optional it may exist or not, also user may override the percentage to a custom one
-  id:number;
-  duration:number;
+  customPercentage?: number | null;
+  id: number;
+  duration: number;
+  courseCode?: string;
+  keywords?: string[];
+  isActionable?: boolean;
 };
+
+type ScheduleSuggestion = {
+  _id: string;
+  suggestedDate: string;
+  isDelayed?: boolean;
+  isCritical?: boolean;
+};
+
 export default function Home() {
-  // 1. The "Memory" (State)
+  const { currentUser } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [scheduleSuggestions, setScheduleSuggestions] = useState<ScheduleSuggestion[]>([]);
+  const [userSettings, setUserSettings] = useState({
+    university: "Texas State University",
+    major: "Undeclared",
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const isOverloaded = false; 
+  const isOverloaded = false;
 
-  // 2. This logic will simulate a database fetch
-    // asynchronous function to handle the internet traffic since react does not let you use the useEffect as a asyn function
-    // so we just create it inside instead.
-    async function fetchAssignments() {
-      try {
-        //  tries to connect to the server to try and get the assignments
-        const response = await fetch('/api/assignments'); 
-        
-        //  Check if the server answered correctly, we can change the error message to something else
-        if (!response.ok) {
-          throw new Error("Failed to fetch data from the server");
-        }
-        // converts the server's answer into data that React can read
-        const data = await response.json();
-        
-        // Save that real data into our dashboard's memory
-        setTasks(data);
-
-   } catch (error) {
-        // If anything goes wrong, log it so we can debug in future sprint
-        console.error("Error loading tasks:", error);
-      } finally {
-        //  success or fail , turn off the loading text, we can try to change this later as well.
-        setLoading(false);
+  const calculatePriority = useCallback(
+    (priorityWord: string, customNumber?: number | null) => {
+      if (customNumber !== null && customNumber !== undefined) {
+        return customNumber;
       }
+      if (priorityWord === "IMMEDIATE") return 100;
+      if (priorityWord === "medium") return 50;
+      if (priorityWord === "low") return 20;
+      return 0;
+    },
+    []
+  );
+
+  const fetchAssignments = useCallback(async () => {
+    if (!currentUser?.uid) {
+      setTasks([]);
+      setLoading(false);
+      return;
     }
-    const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
-    if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
-        return customNumber; 
-    } 
-    // if notusing custom then keep using this if they have those words set
-      if (priorityWord === 'IMMEDIATE') return 100;
-      if (priorityWord === 'medium') return 50;
-      if (priorityWord === 'low') return 20;
-      return 0; // fallback just in case
-    };
 
-    // run the function we just created
-   useEffect(() => { fetchAssignments();
-  }, []);
+    try {
+      const response = await fetch("/api/assignments", {
+        headers: withFirebaseUserHeaders(currentUser.uid),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch data from the server");
+      }
+
+      const data = await response.json();
+      setTasks(data);
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser?.uid]);
+
+  const fetchSettings = useCallback(async () => {
+    if (!currentUser?.uid) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/settings", {
+        headers: withFirebaseUserHeaders(currentUser.uid),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch settings");
+      }
+
+      const data = await response.json();
+      setUserSettings({
+        university: data.university || "Texas State University",
+        major: data.major || "Undeclared",
+      });
+    } catch (error) {
+      console.error("Failed to load settings", error);
+    }
+  }, [currentUser?.uid]);
+
+  const handleOptimizeSchedule = useCallback(() => {
+    const results = suggestNewSchedule(
+      tasks.map((task) => ({
+        _id: task._id?.toString() || task._id,
+        title: task.title,
+        duration: task.duration || 0,
+        dueDate: task.dueDate,
+        priorityPercentage: calculatePriority(task.priority, task.customPercentage),
+      })),
+      300
+    );
+
+    setScheduleSuggestions(results);
+  }, [calculatePriority, tasks]);
+
+  async function handleProfileUpdate(newMajor: string) {
+    if (!currentUser?.uid) {
+      return;
+    }
+
+    setIsSaving(true);
+    setUserSettings((prev) => ({ ...prev, major: newMajor }));
+
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: withFirebaseUserHeaders(currentUser.uid, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ major: newMajor }),
+      });
+    } catch (error) {
+      console.error("Failed to save major", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleAcceptSuggestion(taskId: string, newDate: string) {
+    if (!currentUser?.uid) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: withFirebaseUserHeaders(currentUser.uid, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ dueDate: newDate }),
+      });
+
+      if (response.ok) {
+        await fetchAssignments();
+        setScheduleSuggestions((prev) => prev.filter((s) => s._id !== taskId));
+      }
+    } catch (error) {
+      console.error("Failed to accept suggestion:", error);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    fetchAssignments();
+    fetchSettings();
+  }, [fetchAssignments, fetchSettings]);
+
+  useEffect(() => {
+    if (tasks.length > 0 && scheduleSuggestions.length === 0) {
+      handleOptimizeSchedule();
+    }
+  }, [handleOptimizeSchedule, scheduleSuggestions.length, tasks.length]);
+
   return (
-    // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
-        <OverloadBanner /> {/* overload banner warning*/}
+      <div className="max-w-6xl mx-auto">
+        <OverloadBanner />
 
         <div className="mt-6">
-          <ScheduleGrid tasks={tasks} />
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">
+              Schedule View
+            </h2>
+            <ScheduleGrid tasks={tasks} />
+          </div>
         </div>
-        
-        <div className="mt-6">
+
+        <div
+          className={`mt-6 p-4 rounded-xl border transition-all ${
+            userSettings.major === "Undeclared"
+              ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
+              : "bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 flex flex-col md:flex-row justify-between items-center"
+          }`}
+        >
+          <div className="mb-2 md:mb-0">
+            <h2
+              className={`font-bold ${
+                userSettings.major === "Undeclared"
+                  ? "text-blue-800 dark:text-blue-300 text-lg mb-2"
+                  : "text-zinc-700 dark:text-zinc-300"
+              }`}
+            >
+              {userSettings.major === "Undeclared"
+                ? "Personalize Your Academic Search!"
+                : "Academic Profile"}
+            </h2>
+            {userSettings.major === "Undeclared" ? (
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Select your major to get personalized study links.
+              </p>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={userSettings.major}
+              onChange={(e) => handleProfileUpdate(e.target.value)}
+              disabled={isSaving}
+              className="p-2 border rounded-lg bg-white dark:bg-zinc-900 dark:border-zinc-600 dark:text-white text-sm cursor-pointer shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Undeclared">Select Major...</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Nursing">Nursing</option>
+              <option value="Business">Business</option>
+              <option value="Psychology">Psychology</option>
+              <option value="Biology">Biology</option>
+              <option value="Engineering">Engineering</option>
+              <option value="English">English</option>
+              <option value="Criminal Justice">Criminal Justice</option>
+              <option value="Mass Communication">Mass Communication</option>
+              <option value="Kinesiology">Kinesiology</option>
+              <option value="Political Science">Political Science</option>
+              <option value="History">History</option>
+            </select>
+            {isSaving ? (
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 animate-pulse font-medium">
+                Saving...
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Current Tasks</h2>
-            
-            {/* overloaded badge! */}
-            <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${ // tailwind classes to switch between
-                                                                                // red if true and green if false, below
-              isOverloaded 
-                ? 'bg-red-50 border-red-200 text-red-700' 
-                : 'bg-green-50 border-green-200 text-green-700'
-            }`}>
-              {isOverloaded ? 'Overloaded' : 'On Track'}
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+              Current Tasks
+            </h2>
+
+            <div
+              className={`px-4 py-1 text-sm rounded-full border font-semibold ${
+                isOverloaded
+                  ? "bg-red-50 border-red-200 text-red-700"
+                  : "bg-green-50 border-green-200 text-green-700"
+              }`}
+            >
+              {isOverloaded ? "Overloaded" : "On Track"}
             </div>
           </div>
-          
-          {/* The Loading State & Task Loop */}
+
           <div className="flex flex-col gap-4">
             {loading ? (
               <div className="flex justify-center items-center py-20">
-                <p className="text-zinc-500 animate-pulse text-lg">Loading your schedule please wait...</p>
+                <p className="text-zinc-500 animate-pulse text-lg">
+                  Loading your schedule please wait...
+                </p>
               </div>
             ) : tasks.length > 0 ? (
-              tasks.map((task) => (
-                <AssignmentCard // if it finds work/assignments get their info
-                  key={task._id}
-                  id={task._id?.toString()|| task._id} // pass the id
-                  title={task.title} 
-                  dueDate={task.dueDate} 
-                  duration={task.duration || 0} // Pass the duration
-                  priorityPercentage={calculatePriority(task.priority, task.customPercentage)} 
-                  priorityWord={task.priority} 
-                  customPercentage={task.customPercentage}
-                  onUpdate={fetchAssignments} // Pass the refresh function
-                />
-              ))
+              tasks.map((task) => {
+                const suggestion = scheduleSuggestions.find(
+                  (s) => s._id === (task._id?.toString() || task._id)
+                );
+
+                return (
+                  <AssignmentCard
+                    key={task._id}
+                    id={task._id?.toString() || task._id}
+                    title={task.title}
+                    dueDate={task.dueDate}
+                    duration={task.duration || 0}
+                    priorityPercentage={calculatePriority(
+                      task.priority,
+                      task.customPercentage
+                    )}
+                    priorityWord={task.priority}
+                    customPercentage={task.customPercentage}
+                    onUpdate={fetchAssignments}
+                    suggestedDate={suggestion?.suggestedDate}
+                    onAcceptSuggestion={handleAcceptSuggestion}
+                    isDelayed={suggestion?.isDelayed}
+                    isCritical={suggestion?.isCritical}
+                    courseCode={task.courseCode || ""}
+                    keywords={task.keywords || []}
+                    isActionable={task.isActionable !== false}
+                    userMajor={userSettings.major}
+                    userUniversity={userSettings.university}
+                  />
+                );
+              })
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-                <p className="text-zinc-500">You are all caught up! Enjoy your day.</p> {/* show caught up message if no work left*/}
+                <p className="text-zinc-500">
+                  You are all caught up! Enjoy your day.
+                </p>
               </div>
             )}
           </div>
-
         </div>
       </div>
     </DashboardLayout>
