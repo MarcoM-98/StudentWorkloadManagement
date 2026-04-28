@@ -32,6 +32,7 @@ userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentP
 
     const [showHelp, setShowHelp] = useState(false);
     const resources = generateResources(userUniversity, userMajor, courseCode, title, keywords);
+    const [dismissedLateWarning, setDismissedLateWarning] = useState(false);
 
     // 1. Safe display for text (e.g., "5/1/2026")
     const safeFormatDate = (dateString?: string) => {
@@ -57,6 +58,10 @@ userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentP
         customPercentage: customPercentage ?? null,
         plannedDate: formatForInput(plannedDate)
         });
+
+        useEffect(() => {
+        setDismissedLateWarning(false);
+    }, [plannedDate, dueDate]);
 
         useEffect(()=> {
             if(!isEditing) // only autosave if user is actually editing
@@ -212,7 +217,19 @@ if (isEditing) {
     </>
     );
 }
-const isActuallyLate = (plannedDate && dueDate && formatForInput(plannedDate) > formatForInput(dueDate)) ? true : isDelayed;
+const plannedStr = formatForInput(plannedDate);
+const dueStr = formatForInput(dueDate);
+const suggestedStr = formatForInput(suggestedDate);
+// Did the user manually push the plan past the deadline?
+const isPastDeadline = Boolean(plannedStr && dueStr && plannedStr > dueStr);
+
+// Does the math engine have a new idea?
+const hasNewSuggestion = Boolean(suggestedStr && suggestedStr !== (plannedStr || dueStr));
+
+// Show the box if EITHER of those things are true
+const showWarningBox = hasNewSuggestion || (isPastDeadline && !dismissedLateWarning);
+const isActuallyLate = isPastDeadline || isDelayed;
+
 
   return (
     <div 
@@ -239,7 +256,7 @@ const isActuallyLate = (plannedDate && dueDate && formatForInput(plannedDate) > 
             </p>
         )}
         </div>
-       {suggestedDate && formatForInput(suggestedDate) !== formatForInput(plannedDate || dueDate) && (
+       {showWarningBox && (
         <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
 
           isActuallyLate ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
@@ -260,13 +277,17 @@ const isActuallyLate = (plannedDate && dueDate && formatForInput(plannedDate) > 
             'text-blue-600'
           }`}>
 
-            Reschedule to: {safeFormatDate(suggestedDate)}
+            {isPastDeadline && !hasNewSuggestion 
+                ? `Must complete by: ${safeFormatDate(dueDate)}` 
+                : `Reschedule to: ${safeFormatDate(suggestedDate)}`}
           </p>
         </div>
+        {hasNewSuggestion ? (
         <button
          onClick={(e) => {
          e.stopPropagation(); // Prevents opening the edit mode when clicking the button
-         onAcceptSuggestion?.(id, suggestedDate);
+         const fixDate = (isPastDeadline && !hasNewSuggestion) ? dueDate : suggestedDate;
+         onAcceptSuggestion?.(id, formatForInput(fixDate));
       }}
       className={`ml-4 px-3 py-1 text-white text-xs font-bold rounded transition-colors ${
            isDelayed ? 'bg-red-600 hover:bg-red-700' : 
@@ -277,9 +298,32 @@ const isActuallyLate = (plannedDate && dueDate && formatForInput(plannedDate) > 
     >
       Accept
     </button>
-  </div>
-        )}
-        </div>
+) : (
+    <div className="flex gap-2 ml-4">
+    <button
+     onClick={(e) => {
+        e.stopPropagation(); 
+        onAcceptSuggestion?.(id, formatForInput(dueDate));
+        }}
+        className="px-3 py-1 text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 text-xs font-bold rounded transition-colors"
+        >
+        Fix Date
+        </button>
+        <button
+        onClick={(e) => {
+            e.stopPropagation(); 
+            // Triggers the memory state to hide the box, keeping the late date
+            setDismissedLateWarning(true); 
+            }}
+            className="px-3 py-1 text-white text-xs font-bold rounded transition-colors bg-red-600 hover:bg-red-700"
+            >
+            Keep Late
+            </button>
+            </div>
+       )}
+    </div>
+    )}
+    </div>
       <div className="flex flex-col items-end gap-2">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
           Priority: {priorityPercentage}%

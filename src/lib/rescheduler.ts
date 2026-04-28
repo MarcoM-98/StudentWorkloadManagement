@@ -13,6 +13,12 @@ export type Suggestion = {
   isDelayed: boolean;
   isCritical: boolean;
 };
+const toLocalYYYYMMDD = (date: Date) => { // Safe local date formatter to prevent timezone bug
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export function suggestNewSchedule(tasks: Task[], dailyMinutesMax: number): Suggestion[] { // This uses the definition above to process the list.
 
@@ -46,15 +52,6 @@ const now = new Date().getTime();
                             // checks if the current hour is past 10 PM. If it is, or if the time limit is maxed out, it pushes the work to 9:00 AM the next day.
       minutesUsedToday = 0;
     }
-    suggestions.push({
-      _id: task._id, // identifies the assignment
-      title: task.title,
-      suggestedDate: new Date(currentDay).toISOString().split('T')[0], // This converts the "Date Pointer" into a clean, readable string. such as year, month, day
-
-      isDelayed: new Date(currentDay) > new Date(task.dueDate) // this helps the UI show a "Late" warning that we can implement ?
-      ,
-      isCritical: false
-    });
     
     const suggestedDateObj = new Date(currentDay);
     const dueDateObj = new Date(task.dueDate);
@@ -62,16 +59,19 @@ const now = new Date().getTime();
     
     const timeDifference = dueDateObj.getTime() - suggestedDateObj.getTime(); // Calculate if it's due within 24 hours of our suggested date
     const isCritical = timeDifference >= 0 && timeDifference < (1000 * 60 * 60 * 24);
+    const assignedDateStr = toLocalYYYYMMDD(currentDay);
+    const officialDueStr = task.dueDate.split('T')[0];
 
     suggestions.push({ // adds them to the end of our result list 
       _id: task._id, // identifies the assignment
       title: task.title,
-      suggestedDate: suggestedDateObj.toISOString().split('T')[0], 
-      isDelayed: suggestedDateObj > dueDateObj, 
+      suggestedDate: assignedDateStr,
+      isDelayed: assignedDateStr  > officialDueStr, 
       isCritical: isCritical  // this helps the UI show a "Late" warning
     });
     
     minutesUsedToday += task.duration; // adds the current assignment's minutes to the day's total so that the next assignment in the loop knows how much space is left in the day
+    currentDay.setMinutes(currentDay.getMinutes() + task.duration);
   }
   
   return suggestions;
