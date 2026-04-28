@@ -1,12 +1,11 @@
 import mongoose from 'mongoose';
-const { Schema, model } = mongoose;
+const { Schema } = mongoose;
 
 const userSettingSchema = new Schema(
     {
         userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            ref: "User"
+            type: String,
+            required: true
         },
 
         dailyStudyMinutes: {
@@ -48,6 +47,7 @@ const userSettingSchema = new Schema(
         versionKey: false
     }
 );
+userSettingSchema.index({ userId: 1 }, { unique: true });
 const UserSetting = mongoose.models.UserSetting || mongoose.model("UserSetting", userSettingSchema);
 
 export default UserSetting
