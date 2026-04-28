@@ -21,12 +21,14 @@ type AssignmentProps = {
     userUniversity?: string;
     onComplete?: () => void;
     plannedDate?: string;
+    dailyMinutesUsed?: number;
+    maxDailyMinutes?: number;  
 
 };
 
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
 suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
-userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentProps) {
+userUniversity = "Texas State University", onComplete, plannedDate, dailyMinutesUsed = 0, maxDailyMinutes = 360}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -229,6 +231,15 @@ const hasNewSuggestion = Boolean(suggestedStr && suggestedStr !== (plannedStr ||
 // Show the box if EITHER of those things are true
 const showWarningBox = hasNewSuggestion || (isPastDeadline && !dismissedLateWarning);
 const isActuallyLate = isPastDeadline || isDelayed;
+// Calculate how much time is left today
+const minutesRemaining = maxDailyMinutes - dailyMinutesUsed;
+const isOverCapacity = minutesRemaining < 0;
+const capacityText = isOverCapacity 
+    ? `${Math.abs(minutesRemaining)} mins over limit` 
+    : `${minutesRemaining} mins left today`;
+const capacityColor = isOverCapacity 
+    ? "text-red-600 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-900/30" 
+    : "text-green-700 bg-green-100 border-green-200 dark:text-green-400 dark:bg-green-900/30";
 
 
   return (
@@ -239,20 +250,26 @@ const isActuallyLate = isPastDeadline || isDelayed;
      <div className="flex justify-between items-start">
       <div>
         <h3 className="text-md font-bold">{title}</h3>
-        <div className="flex flex-col mt-1">
+        <div className="flex flex-col mt-1 gap-1">
           {plannedDate ? (
             <>
               {/* If they accepted a suggestion, show their Planned date as primary */}
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
                 Planned For: {safeFormatDate(plannedDate)}
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${capacityColor}`}>
+                {capacityText}
+                </span>
               </p>
               <p className="text-xs text-zinc-500 line-through">
                 Official Deadline: {safeFormatDate(dueDate)}
               </p>
             </>
           ) : (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 flex items-center gap-2">
               Due: {safeFormatDate(dueDate)} • {duration} mins
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${capacityColor}`}>
+              {capacityText}
+              </span>
             </p>
         )}
         </div>

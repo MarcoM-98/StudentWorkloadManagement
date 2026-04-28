@@ -326,6 +326,10 @@ export default function Home() {
                   const suggestion = scheduleSuggestions.find(
                     (s) => s._id === taskId
                   );
+                    const targetDateStr = (task.plannedDate || task.dueDate).split('T')[0]; // what day this specific task is scheduled for
+                    const dailyMinutesUsed = activeTasks // Add up the duration of ALL active tasks scheduled for this exact same day
+                    .filter(t => (t.plannedDate || t.dueDate).split('T')[0] === targetDateStr)
+                    .reduce((sum, t) => sum + (Number(t.duration) || 60), 0);
 
                   return (
                     <AssignmentCard
@@ -352,6 +356,8 @@ export default function Home() {
                       userUniversity={userSettings.university}
                       onComplete={() => handleCompleteTask(taskId)}
                       plannedDate={task.plannedDate}
+                      dailyMinutesUsed={dailyMinutesUsed}
+                      maxDailyMinutes={360}
                     />
                   );
                 })
