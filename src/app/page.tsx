@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
 import ScheduleGrid from "@/components/ScheduleGrid";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { suggestNewSchedule } from "@/lib/rescheduler";
+import DailyQuote from "@/components/DailyQuote";
+import WeeklyStats from "@/components/WeeklyStats";
 
 // We define the shape of the data thats going to show
 type Task = {
@@ -19,6 +21,8 @@ type Task = {
   courseCode?: string; 
   keywords?: string[]; 
   isActionable?: boolean;
+  completed?: boolean;
+  plannedDate?: string;
 };
 
 export default function Home() {
@@ -28,6 +32,10 @@ export default function Home() {
   const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]);
   const [userSettings, setUserSettings] = useState({ university: "Texas State University", major: "Undeclared" });
   const [isSaving, setIsSaving] = useState(false);
+
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const isOverloaded = false;
 
@@ -85,6 +93,38 @@ export default function Home() {
     setIsSaving(false);
   }
 
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: true }), 
+      });
+
+      if (response.ok) {
+        await fetchAssignments(); // Re-fetch to update the UI instantly
+      }
+    } catch (error) {
+      console.error("Failed to mark task as completed:", error);
+    }
+  };
+
+  const handleUndoTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: false }), //  Sets it back to false
+      });
+
+      if (response.ok) {
+        await fetchAssignments();
+      }
+    } catch (error) {
+      console.error("Failed to undo task:", error);
+    }
+  };
+
     const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
     if (customNumber !== null && customNumber !== undefined) { // If the user typed a custom override, always use it
         return customNumber; 
@@ -97,7 +137,15 @@ export default function Home() {
   };
 
   const handleOptimizeSchedule = () => {
-    const results = suggestNewSchedule(tasks, 300); // Run the math/reschedule engine set to 300 minutes just like on OverloadBanner
+    const minutesSpent = completedTasks.reduce((sum, task) => sum + (task.duration || 0), 0);
+    const remainingDailyLimit = Math.max(300 - minutesSpent, 0);
+    
+    const tasksForMath = activeTasks.map(task => ({ // If a task has a plannedDate, temporarily make it the dueDate so the math engine respects it
+      ...task,
+      dueDate: task.plannedDate ? task.plannedDate : task.dueDate
+    }));
+
+    const results = suggestNewSchedule(tasksForMath, remainingDailyLimit); // Run the math/reschedule engine
     setScheduleSuggestions(results); // save the results to the state
     console.log("Optimization calculated successfully!");
   };
@@ -108,7 +156,7 @@ export default function Home() {
         //send a PATCH request to API route/mongodb because we want to suggest a new date
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dueDate: newDate }), // We overwrite the old date with the suggestion
+        body: JSON.stringify({ plannedDate: newDate }), // We overwrite the old date with the suggestion
       });
       if (response.ok) {
         await fetchAssignments(); // Refresh the list so the UI shows the updated official date
@@ -122,21 +170,60 @@ export default function Home() {
   };
 
   useEffect(() => {
-  if (tasks.length > 0 && scheduleSuggestions.length === 0) { // If we have tasks but haven't calculated suggestions yet
+  if (tasks.length > 0 ) { // If we have tasks but haven't calculated suggestions yet
     console.log("Automatically running rescheduler logic...");
     handleOptimizeSchedule(); // This triggers the math locally for now again, till uploadform is finally connected to mongodb
   }
-}, [tasks, scheduleSuggestions]);
+}, [tasks]);
     // run the function we just created
    useEffect(() => { fetchAssignments();
    fetchSettings();
   }, []);
 
+  //  Split the tasks into Active and Completed
+  const activeTasks = useMemo(() => {
+    return tasks.filter(task => task.completed !== true);
+  }, [tasks]);
+
+  const completedTasks = useMemo(() => {
+    return tasks.filter(task => task.completed === true);
+  }, [tasks]);
+
+  // only sort and filter the activeTasks
+  const filteredTasks = useMemo(() => {
+    let result = [...activeTasks];
+
+    // Filter by Priority
+    if (filterPriority !== "all") {
+      result = result.filter(task => task.priority === filterPriority);
+    }
+
+    // Sort Logic
+    result.sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortBy === "priority") {
+        // High (100) > Medium (50) > Low (20)
+        return calculatePriority(b.priority, b.customPercentage) - calculatePriority(a.priority, a.customPercentage);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [tasks, filterPriority, sortBy]);
+
+
+
   return (
     // This wraps the page in the Sidebar and Header created in SCRUM-54
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <OverloadBanner /> {/* overload banner warning*/}
+        <OverloadBanner tasks={activeTasks} /> {/* overload banner warning*/}
+        
+        <DailyQuote />
+        <WeeklyStats completedTasks={completedTasks.length} /> 
+
 
         <div className="mt-6">
           <div className="mb-8">
@@ -183,10 +270,30 @@ export default function Home() {
         </div>
         
         <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
               Current Tasks
             </h2>
+            <div className="flex flex-wrap items-center gap-3">
+                <select 
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
+                  className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="IMMEDIATE">Immediate</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="date">Sort by Due Date</option>
+                  <option value="priority">Sort by Priority</option>
+                </select>
 
             {/* overloaded badge! */}
             <div
@@ -201,6 +308,7 @@ export default function Home() {
               {isOverloaded ? "Overloaded" : "On Track"}
             </div>
           </div>
+        </div>
 
           {/* The Loading State & Task Loop */}
           <div className="flex flex-col gap-4">
@@ -210,14 +318,18 @@ export default function Home() {
                   Loading your schedule please wait...
                 </p>
               </div>
-            ) : tasks.length > 0 ? (
+            ) : filteredTasks.length > 0 ? (
 
-              tasks.map((task) => {
+              filteredTasks.map((task) => {
                   const taskId = task._id?.toString() || task._id;
 
                   const suggestion = scheduleSuggestions.find(
                     (s) => s._id === taskId
                   );
+                    const targetDateStr = (task.plannedDate || task.dueDate).split('T')[0]; // what day this specific task is scheduled for
+                    const dailyMinutesUsed = activeTasks // Add up the duration of ALL active tasks scheduled for this exact same day
+                    .filter(t => (t.plannedDate || t.dueDate).split('T')[0] === targetDateStr)
+                    .reduce((sum, t) => sum + (Number(t.duration) || 60), 0);
 
                   return (
                     <AssignmentCard
@@ -242,21 +354,65 @@ export default function Home() {
                       isActionable={task.isActionable !== false}
                       userMajor={userSettings.major}
                       userUniversity={userSettings.university}
+                      onComplete={() => handleCompleteTask(taskId)}
+                      plannedDate={task.plannedDate}
+                      dailyMinutesUsed={dailyMinutesUsed}
+                      maxDailyMinutes={360}
                     />
                   );
                 })
             ) : (
               <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
                 <p className="text-zinc-500">
-                  You are all caught up! Enjoy your day.
+                {tasks.length === 0
+                  ? "You are all caught up! Enjoy your day."
+                  : "No tasks match your current filters."}
                 </p>{" "}
                 {/* show caught up message if no work left*/}
               </div>
             )}
           </div>
+          {completedTasks.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-white font-bold transition-colors outline-none"
+              >
+                {showCompleted ? "▼ Hide" : "▶ Show"} Completed Assignments ({completedTasks.length})
+              </button>
+
+              {showCompleted && (
+                <div className="mt-4 flex flex-col gap-3 opacity-60"> 
+                  {completedTasks.map((task) => (
+                    <div 
+                      key={task._id} 
+                      className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg flex justify-between items-center border border-zinc-200 dark:border-zinc-800"
+                    >
+                      <div>
+                        <span className="line-through text-zinc-500 font-medium">{task.title}</span>
+                        <span className="ml-3 text-xs text-zinc-400">{task.duration} mins</span>
+                        {/* button for undo or done*/}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => handleUndoTask(task._id?.toString() || task.id.toString())}
+                          className="text-xs text-zinc-400 hover:text-blue-500 font-bold transition-colors"
+                        >
+                          ↩ Undo
+                        </button>
+                      <span className="text-xs text-green-600 dark:text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        ✓ Done
+                      </span>
+                    </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-      </div>
+    </div>
     </DashboardLayout>
   );
 }

@@ -104,25 +104,23 @@ export async function POST(req) {
         },
         {
           role: "user",
-          content: `Read the following assignment and extract:
-
-1. Estimated time to complete (in MINUTES, just a number)
-2. Due date (if mentioned, otherwise empty string)
+          content: `Read the following academic document and extract the required data:
 
 Respond EXACTLY in this format:
 {
   "minutes": number,
-  "due_date": "string",
+  "due_date": "string", 
   "is_actionable_assignment": boolean,
-  "keywords": ["string", "string"]
+  "keywords": ["string", "string", "string", "string"]
 }
 
 Rules
 1. is_actionable_assignment: Set TRUE if this is an assignment, a homework, a project, a quiz, a exam, 
-a study guide, or an essay. Set FALSE if this is a syllabus, course schedule, or policy document.
+a study guide, practice, proposal, lab, or an essay. Set FALSE if this is a syllabus, course schedule, lecture, or policy document.
 2. If FALSE, set "minutes" to 0, "due_date" to "", and "keywords" to [].
 3. If TRUE, extract the minutes, due date, and 2 to 3 highly specific study keywords.
 - Use YYYY-MM-DD format for dates, if no due date is found, return "". Do not return formats like 01JAN26, 4/4/26, or "today"
+4. keywords: ALWAYS extract 3 to 4 highly specific technical study topics from the document (e.g., "Single-Cycle Datapath", "Pipelining", "Direct-Mapped Cache"). NEVER leave this array empty.
 
 
 
@@ -134,7 +132,7 @@ Example:
   "keywords": ["Abstract Syntax Trees", "Compiler Construction"]
 }
 
-Assignment:${content}`,
+Assignment Text:${content}`,
         },
       ],
     });

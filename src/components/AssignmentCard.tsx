@@ -19,28 +19,51 @@ type AssignmentProps = {
     isActionable?: boolean;
     userMajor?: string;
     userUniversity?: string;
+    onComplete?: () => void;
+    plannedDate?: string;
+    dailyMinutesUsed?: number;
+    maxDailyMinutes?: number;  
 
 };
 
 export default function AssignmentCard({ id, title, dueDate, duration, priorityPercentage, priorityWord, customPercentage, onUpdate, 
 suggestedDate, onAcceptSuggestion, isDelayed, isCritical, courseCode = "", keywords = [], isActionable = true, userMajor = "Undeclared", 
-userUniversity = "Texas State University"}: AssignmentProps) {
+userUniversity = "Texas State University", onComplete, plannedDate, dailyMinutesUsed = 0, maxDailyMinutes = 360}: AssignmentProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     const [showHelp, setShowHelp] = useState(false);
     const resources = generateResources(userUniversity, userMajor, courseCode, title, keywords);
+    const [dismissedLateWarning, setDismissedLateWarning] = useState(false);
+
+    // 1. Safe display for text (e.g., "5/1/2026")
+    const safeFormatDate = (dateString?: string) => {
+        if (!dateString) return "No date";
+        const [year, month, day] = dateString.split('T')[0].split('-');
+        return `${Number(month)}/${Number(day)}/${year}`;
+    };
+
+    // 2. Safe display for the Edit Form Input (e.g., "2026-05-01")
+    const formatForInput = (dateString?: string) => {
+        if (!dateString) return "";
+        return dateString.split('T')[0];
+    };
     
     // state initialization with fallbacks to prevent "uncontrolled" errors such as empty string or 0 on duration 
     // also react does not like when an input switches from an uncontrolled to a controlled value
     // so this function will use a fallback that if data is missing it stays "controlled" (with a fallback value)
     const [editData, setEditData] = useState({
         title: title || "",
-        dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "", // convert object to standarlized string
+        dueDate: formatForInput(dueDate),
         duration: (duration ?? duration > 0) ? duration : 60,
         priority: priorityWord || "low",
-        customPercentage: customPercentage ?? null
+        customPercentage: customPercentage ?? null,
+        plannedDate: formatForInput(plannedDate)
         });
+
+        useEffect(() => {
+        setDismissedLateWarning(false);
+    }, [plannedDate, dueDate]);
 
         useEffect(()=> {
             if(!isEditing) // only autosave if user is actually editing
@@ -57,7 +80,8 @@ userUniversity = "Texas State University"}: AssignmentProps) {
                         dueDate: editData.dueDate,
                         duration: Number(editData.duration),
                         priority: editData.priority, // this is the low, medium, immediate option which will be saved
-                        customPercentage: editData.customPercentage // this is where it will save the custom number
+                        customPercentage: editData.customPercentage, // this is where it will save the custom number
+                        plannedDate: editData.plannedDate ? editData.plannedDate : null
                     }),
                 });
         
@@ -112,6 +136,15 @@ if (isEditing) {
                 onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
               />
             </div>
+            <div>
+            <label className="text-[10px] uppercase text-blue-500 font-bold ml-1">Planned Date</label>
+            <input
+            type="date"
+            className="w-full p-2 rounded border border-blue-200 dark:bg-zinc-800 dark:border-blue-900/50 outline-none focus:ring-1 focus:ring-blue-500"
+            value={editData.plannedDate || ""} 
+            onChange={(e) => setEditData({ ...editData, plannedDate: e.target.value })}
+             />
+            </div>
             {/* The Priority Controls (Side-by-Side) */}
             <div className="flex gap-4 col-span-2"> 
               
@@ -165,10 +198,11 @@ if (isEditing) {
                 onClick={(e) => { e.stopPropagation();   // Reset the typing back to to what it was before
                         setEditData({
                             title: title || "",
-                            dueDate: dueDate ? new Date(dueDate).toISOString().split('T')[0] : "",
+                            dueDate: formatForInput(dueDate),
                             duration: (duration ?? duration > 0) ? duration : 60,
                             priority: priorityWord || "low",
-                            customPercentage: customPercentage ?? null
+                            customPercentage: customPercentage ?? null,
+                            plannedDate: formatForInput(plannedDate)
                         });
                         setIsEditing(false); 
                     }} 
@@ -185,6 +219,28 @@ if (isEditing) {
     </>
     );
 }
+const plannedStr = formatForInput(plannedDate);
+const dueStr = formatForInput(dueDate);
+const suggestedStr = formatForInput(suggestedDate);
+// Did the user manually push the plan past the deadline?
+const isPastDeadline = Boolean(plannedStr && dueStr && plannedStr > dueStr);
+
+// Does the math engine have a new idea?
+const hasNewSuggestion = Boolean(suggestedStr && suggestedStr !== (plannedStr || dueStr));
+
+// Show the box if EITHER of those things are true
+const showWarningBox = hasNewSuggestion || (isPastDeadline && !dismissedLateWarning);
+const isActuallyLate = isPastDeadline || isDelayed;
+// Calculate how much time is left today
+const minutesRemaining = maxDailyMinutes - dailyMinutesUsed;
+const isOverCapacity = minutesRemaining < 0;
+const capacityText = isOverCapacity 
+    ? `${Math.abs(minutesRemaining)} mins over limit` 
+    : `${minutesRemaining} mins left today`;
+const capacityColor = isOverCapacity 
+    ? "text-red-600 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-900/30" 
+    : "text-green-700 bg-green-100 border-green-200 dark:text-green-400 dark:bg-green-900/30";
+
 
   return (
     <div 
@@ -194,34 +250,61 @@ if (isEditing) {
      <div className="flex justify-between items-start">
       <div>
         <h3 className="text-md font-bold">{title}</h3>
-        <p className="text-sm text-zinc-500">Due: {dueDate ? new Date(dueDate).toLocaleDateString(): "No date"} • {duration} mins </p>
-       {suggestedDate && (
+        <div className="flex flex-col mt-1 gap-1">
+          {plannedDate ? (
+            <>
+              {/* If they accepted a suggestion, show their Planned date as primary */}
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                Planned For: {safeFormatDate(plannedDate)}
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${capacityColor}`}>
+                {capacityText}
+                </span>
+              </p>
+              <p className="text-xs text-zinc-500 line-through">
+                Official Deadline: {safeFormatDate(dueDate)}
+              </p>
+            </>
+          ) : (
+        <p className="text-sm text-zinc-500 flex items-center gap-2">
+              Due: {safeFormatDate(dueDate)} • {duration} mins
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${capacityColor}`}>
+              {capacityText}
+              </span>
+            </p>
+        )}
+        </div>
+       {showWarningBox && (
         <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
-          isDelayed ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
+
+          isActuallyLate ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
           isCritical ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200' : 
           'bg-blue-50 dark:bg-zinc-800 border-blue-100'
         }`}>
          <div>
           <p className={`text-[10px] font-bold uppercase ${
-            isDelayed ? 'text-red-600' : 
+            isActuallyLate ? 'text-red-600' : 
             isCritical ? 'text-yellow-600' : 
             'text-blue-500'
           }`}>
-            {isDelayed ? 'Late Warning - Reschedule' : isCritical ? 'Critical Deadline' : 'Optimization Suggestion'}
+            {isActuallyLate ? 'Late Warning - Reschedule' : isCritical ? 'Critical Deadline' : 'Optimization Suggestion'}
           </p>
           <p className={`text-sm font-semibold ${
-            isDelayed ? 'text-red-700 dark:text-red-400' : 
+            isActuallyLate ? 'text-red-700 dark:text-red-400' : 
             isCritical ? 'text-yellow-700 dark:text-yellow-400' : 
             'text-blue-600'
           }`}>
 
-            Reschedule to: {new Date(suggestedDate).toLocaleDateString()}
+            {isPastDeadline && !hasNewSuggestion 
+                ? `Must complete by: ${safeFormatDate(dueDate)}` 
+                : `Reschedule to: ${safeFormatDate(suggestedDate)}`}
           </p>
         </div>
+        {hasNewSuggestion ? (
         <button
          onClick={(e) => {
          e.stopPropagation(); // Prevents opening the edit mode when clicking the button
-         onAcceptSuggestion?.(id, suggestedDate);
+         const fixDate = (isPastDeadline && !hasNewSuggestion) ? dueDate : suggestedDate;
+         onAcceptSuggestion?.(id, formatForInput(fixDate));
       }}
       className={`ml-4 px-3 py-1 text-white text-xs font-bold rounded transition-colors ${
            isDelayed ? 'bg-red-600 hover:bg-red-700' : 
@@ -232,14 +315,46 @@ if (isEditing) {
     >
       Accept
     </button>
-  </div>
-        )}
-        </div>
-      <div className="flex flex-col items-end">
+) : (
+    <div className="flex gap-2 ml-4">
+    <button
+     onClick={(e) => {
+        e.stopPropagation(); 
+        onAcceptSuggestion?.(id, formatForInput(dueDate));
+        }}
+        className="px-3 py-1 text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 text-xs font-bold rounded transition-colors"
+        >
+        Fix Date
+        </button>
+        <button
+        onClick={(e) => {
+            e.stopPropagation(); 
+            // Triggers the memory state to hide the box, keeping the late date
+            setDismissedLateWarning(true); 
+            }}
+            className="px-3 py-1 text-white text-xs font-bold rounded transition-colors bg-red-600 hover:bg-red-700"
+            >
+            Keep Late
+            </button>
+            </div>
+       )}
+    </div>
+    )}
+    </div>
+      <div className="flex flex-col items-end gap-2">
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
           Priority: {priorityPercentage}%
         </span>
-      </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // Prevents the card from opening edit mode
+            if (onComplete) onComplete(); 
+          }}
+          className="px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 border border-green-200 dark:border-green-800 text-xs font-bold rounded-md transition-colors"
+        >
+          ✓ Mark as Done
+        </button>
+    </div>
     </div>
 
         {/* the UI for the smart links/assistant */}

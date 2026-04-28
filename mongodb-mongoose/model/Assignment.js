@@ -60,6 +60,10 @@ const assignmentSchema = new Schema(
             type: Boolean, 
             default: true 
         },
+        plannedDate: {
+            type: Date,
+            default: null, // The Rescheduler's optimized date
+        },
     },
 
     {
