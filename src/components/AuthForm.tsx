@@ -1,11 +1,9 @@
 "use client";
 import React, { useState } from 'react'
+import { FirebaseError } from 'firebase/app'
 import { doSignInWithEmailAndPassword, doSignInWithGoogle, doCreateUserWithEmailAndPassword } from '@/lib/auth'
-import { useAuth } from '@/contexts/AuthContext'
 
 const AuthForm = () => {
-    const { userLoggedIn } = useAuth()
-
     const [isLogin, setIsLogin] = useState(true)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -17,6 +15,7 @@ const AuthForm = () => {
         e.preventDefault()
         if (!isSigningIn) {
             setIsSigningIn(true)
+            setErrorMessage('')
             try {
                 if (isLogin) {
                     await doSignInWithEmailAndPassword(email, password)
@@ -28,8 +27,8 @@ const AuthForm = () => {
                     }
                     await doCreateUserWithEmailAndPassword(email, password)
                 }
-            } catch (err: any) {
-                setErrorMessage(err.message)
+            } catch (err) {
+                setErrorMessage(err instanceof FirebaseError ? err.message : 'Unable to authenticate right now.')
                 setIsSigningIn(false)
             }
         }
@@ -39,8 +38,9 @@ const AuthForm = () => {
         e.preventDefault()
         if (!isSigningIn) {
             setIsSigningIn(true)
-            doSignInWithGoogle().catch((err: any) => {
-                setErrorMessage(err.message)
+            setErrorMessage('')
+            doSignInWithGoogle().catch((err) => {
+                setErrorMessage(err instanceof FirebaseError ? err.message : 'Unable to sign in with Google right now.')
                 setIsSigningIn(false)
             })
         }
@@ -140,7 +140,10 @@ const AuthForm = () => {
                         {isLogin ? "Don't have an account?" : "Already have an account?"} {'   '}
                         <button
                             type="button"
-                            onClick={() => setIsLogin(!isLogin)}
+                            onClick={() => {
+                                setIsLogin(!isLogin)
+                                setErrorMessage('')
+                            }}
                             className="text-center text-sm hover:underline font-bold"
                         >
                             {isLogin ? 'Sign Up' : 'Sign In'}
