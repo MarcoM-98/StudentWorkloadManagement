@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
+import ScheduleGrid from "@/components/ScheduleGrid";
 
 // We define the shape of the data thats going to show
 type Task = {
@@ -67,6 +68,10 @@ export default function Home() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <OverloadBanner /> {/* overload banner warning*/}
+
+        <div className="mt-6">
+          <ScheduleGrid tasks={tasks} />
+        </div>
         
         <div className="mt-6">
           <div className="flex justify-between items-center mb-6">
