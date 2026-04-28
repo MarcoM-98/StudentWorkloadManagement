@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"; // Lets us send JSON responses back from a Next.js API route
-import fs from "fs"; // read files from disk
-import path from "path"; // build safe file paths for diff OS
 import OpenAI from "openai";
 import { extractText, getDocumentProxy } from "unpdf";
 import mammoth from "mammoth";
+import { connectDB } from "../../../../mongodb-mongoose/db.js";
+import UploadedDocument from "../../../../mongodb-mongoose/model/UploadedDocument.js";
+import { requireFirebaseUserId } from "@/lib/requestUser";
 
 // Create one OpenAI client using the API key from your .env file
 const openai = new OpenAI({
@@ -38,28 +39,35 @@ function normalizeDueDate(dateString) {
 
 export async function POST(req) {
   try {
-    const { filename } = await req.json(); // Expected format: { "filename": "somefile.txt" }
+    const { userId, errorResponse } = requireFirebaseUserId(req);
 
-    if (!filename) {
+    if (errorResponse) {
+      return errorResponse;
+    }
+
+    await connectDB();
+    const { documentId } = await req.json();
+
+    if (!documentId) {
       return NextResponse.json(
-        { error: "No filename provided" },
+        { error: "No document id provided" },
         { status: 400 }
       );
     }
 
-    const safeFilename = path.basename(filename);
+    const savedDocument = await UploadedDocument.findOne({
+      _id: documentId,
+      userId,
+    }).lean();
 
-    // process.cwd() = root of your Next.js project
-    const filePath = path.join(process.cwd(), "uploads", safeFilename);
-
-    if (!fs.existsSync(filePath)) {
+    if (!savedDocument) {
       return NextResponse.json(
         { error: "File not found" },
         { status: 404 }
       );
     }
 
-    const lowerName = safeFilename.toLowerCase();
+    const lowerName = savedDocument.originalName.toLowerCase();
 
     if (
       !lowerName.endsWith(".txt") &&
@@ -73,16 +81,15 @@ export async function POST(req) {
     }
 
     let content = "";
+    const fileBuffer = Buffer.from(savedDocument.data);
 
     if (lowerName.endsWith(".txt")) {
-      content = fs.readFileSync(filePath, "utf-8");
+      content = fileBuffer.toString("utf-8");
     } else if (lowerName.endsWith(".pdf")) {
-      const fileBuffer = fs.readFileSync(filePath);
       const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
       const pdfData = await extractText(pdf, { mergePages: true });
       content = pdfData.text || "";
     } else if (lowerName.endsWith(".docx")) {
-      const fileBuffer = fs.readFileSync(filePath);
       const docxData = await mammoth.extractRawText({ buffer: fileBuffer });
       content = docxData.value || "";
     }
@@ -148,7 +155,7 @@ Assignment Text:${content}`,
 
     try {
       parsed = JSON.parse(cleaned);
-    } catch (e) {
+    } catch {
       console.error("JSON parse failed:", cleaned);
 
       return NextResponse.json(
