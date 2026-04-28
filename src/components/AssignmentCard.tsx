@@ -54,7 +54,8 @@ userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentP
         dueDate: formatForInput(dueDate),
         duration: (duration ?? duration > 0) ? duration : 60,
         priority: priorityWord || "low",
-        customPercentage: customPercentage ?? null
+        customPercentage: customPercentage ?? null,
+        plannedDate: formatForInput(plannedDate)
         });
 
         useEffect(()=> {
@@ -72,7 +73,8 @@ userUniversity = "Texas State University", onComplete, plannedDate}: AssignmentP
                         dueDate: editData.dueDate,
                         duration: Number(editData.duration),
                         priority: editData.priority, // this is the low, medium, immediate option which will be saved
-                        customPercentage: editData.customPercentage // this is where it will save the custom number
+                        customPercentage: editData.customPercentage, // this is where it will save the custom number
+                        plannedDate: editData.plannedDate ? editData.plannedDate : null
                     }),
                 });
         
@@ -126,6 +128,15 @@ if (isEditing) {
                 value={editData.dueDate || ""} // fallback for missing due date
                 onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
               />
+            </div>
+            <div>
+            <label className="text-[10px] uppercase text-blue-500 font-bold ml-1">Planned Date</label>
+            <input
+            type="date"
+            className="w-full p-2 rounded border border-blue-200 dark:bg-zinc-800 dark:border-blue-900/50 outline-none focus:ring-1 focus:ring-blue-500"
+            value={editData.plannedDate || ""} 
+            onChange={(e) => setEditData({ ...editData, plannedDate: e.target.value })}
+             />
             </div>
             {/* The Priority Controls (Side-by-Side) */}
             <div className="flex gap-4 col-span-2"> 
@@ -183,7 +194,8 @@ if (isEditing) {
                             dueDate: formatForInput(dueDate),
                             duration: (duration ?? duration > 0) ? duration : 60,
                             priority: priorityWord || "low",
-                            customPercentage: customPercentage ?? null
+                            customPercentage: customPercentage ?? null,
+                            plannedDate: formatForInput(plannedDate)
                         });
                         setIsEditing(false); 
                     }} 
@@ -200,6 +212,7 @@ if (isEditing) {
     </>
     );
 }
+const isActuallyLate = (plannedDate && dueDate && formatForInput(plannedDate) > formatForInput(dueDate)) ? true : isDelayed;
 
   return (
     <div 
@@ -226,22 +239,23 @@ if (isEditing) {
             </p>
         )}
         </div>
-       {suggestedDate && !plannedDate && (
+       {suggestedDate && formatForInput(suggestedDate) !== formatForInput(plannedDate || dueDate) && (
         <div className={`mt-2 p-2 rounded border flex justify-between items-center ${
-          isDelayed ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
+
+          isActuallyLate ? 'bg-red-50 dark:bg-red-900/20 border-red-200' : 
           isCritical ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200' : 
           'bg-blue-50 dark:bg-zinc-800 border-blue-100'
         }`}>
          <div>
           <p className={`text-[10px] font-bold uppercase ${
-            isDelayed ? 'text-red-600' : 
+            isActuallyLate ? 'text-red-600' : 
             isCritical ? 'text-yellow-600' : 
             'text-blue-500'
           }`}>
-            {isDelayed ? 'Late Warning - Reschedule' : isCritical ? 'Critical Deadline' : 'Optimization Suggestion'}
+            {isActuallyLate ? 'Late Warning - Reschedule' : isCritical ? 'Critical Deadline' : 'Optimization Suggestion'}
           </p>
           <p className={`text-sm font-semibold ${
-            isDelayed ? 'text-red-700 dark:text-red-400' : 
+            isActuallyLate ? 'text-red-700 dark:text-red-400' : 
             isCritical ? 'text-yellow-700 dark:text-yellow-400' : 
             'text-blue-600'
           }`}>
