@@ -3,10 +3,24 @@ import React, { useContext, useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 
-const AuthContext = React.createContext<any>(undefined);
+type AuthContextValue = {
+  currentUser: User | null;
+  isEmailUser: boolean;
+  isGoogleUser: boolean;
+  loading: boolean;
+  userLoggedIn: boolean;
+};
+
+const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+
+  return context;
 }
 
 interface AuthProviderProps {
@@ -20,42 +34,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, initializeUser);
-    return unsubscribe;
-  }, []);
-
-  async function initializeUser(user: User | null) {
+  const initializeUser = (user: User | null) => {
     if (user) {
-      setCurrentUser({ ...user });
+      setCurrentUser(user);
 
-      // check if provider is email and password login
       const isEmail = user.providerData.some(
         (provider) => provider.providerId === "password"
       );
       setIsEmailUser(isEmail);
 
-      // check if the auth provider is google or not
-      // const isGoogle = user.providerData.some(
-      //   (provider) => provider.providerId === GoogleAuthProvider.PROVIDER_ID
-      // );
-      // setIsGoogleUser(isGoogle);
+      const isGoogle = user.providerData.some(
+        (provider) => provider.providerId === "google.com"
+      );
+      setIsGoogleUser(isGoogle);
 
       setUserLoggedIn(true);
     } else {
       setCurrentUser(null);
       setUserLoggedIn(false);
+      setIsEmailUser(false);
+      setIsGoogleUser(false);
     }
 
     setLoading(false);
-  }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, initializeUser);
+    return unsubscribe;
+  }, []);
 
   const value = {
     userLoggedIn,
     isEmailUser,
     isGoogleUser,
     currentUser,
-    setCurrentUser
+    loading,
   };
 
   return (
