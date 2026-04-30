@@ -1,10 +1,12 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AssignmentCard from "@/components/AssignmentCard";
 import OverloadBanner from "@/components/OverloadBanner";
 import ScheduleGrid from "@/components/ScheduleGrid";
 import { suggestNewSchedule } from "@/lib/rescheduler";
+import DailyQuote from "@/components/DailyQuote";
+import WeeklyStats from "@/components/WeeklyStats";
 import { useAuth } from "@/contexts/AuthContext";
 import { withFirebaseUserHeaders } from "@/lib/apiHeaders";
 
@@ -13,46 +15,35 @@ type Task = {
   title: string;
   dueDate: string;
   priority: string;
-  customPercentage?: number | null;
+  customPercentage?: number | null; 
   id: number;
   duration: number;
-  courseCode?: string;
-  keywords?: string[];
+  courseCode?: string; 
+  keywords?: string[]; 
   isActionable?: boolean;
-};
-
-type ScheduleSuggestion = {
-  _id: string;
-  suggestedDate: string;
-  isDelayed?: boolean;
-  isCritical?: boolean;
+  completed?: boolean;
+  plannedDate?: string;
 };
 
 export default function Home() {
+  // Auth State
   const { currentUser } = useAuth();
+
+  // Dashboard State
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [scheduleSuggestions, setScheduleSuggestions] = useState<ScheduleSuggestion[]>([]);
-  const [userSettings, setUserSettings] = useState({
-    university: "Texas State University",
-    major: "Undeclared",
-  });
+  const [scheduleSuggestions, setScheduleSuggestions] = useState<any[]>([]);
+  const [userSettings, setUserSettings] = useState({ university: "Texas State University", major: "Undeclared" });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Filters and sorting
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const isOverloaded = false;
 
-  const calculatePriority = useCallback(
-    (priorityWord: string, customNumber?: number | null) => {
-      if (customNumber !== null && customNumber !== undefined) {
-        return customNumber;
-      }
-      if (priorityWord === "IMMEDIATE") return 100;
-      if (priorityWord === "medium") return 50;
-      if (priorityWord === "low") return 20;
-      return 0;
-    },
-    []
-  );
+  // --- API CALLS 
 
   const fetchAssignments = useCallback(async () => {
     if (!currentUser?.uid) {
@@ -66,10 +57,8 @@ export default function Home() {
         headers: withFirebaseUserHeaders(currentUser.uid),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch data from the server");
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch data from the server");
+      
       const data = await response.json();
       setTasks(data);
     } catch (error) {
@@ -80,71 +69,44 @@ export default function Home() {
   }, [currentUser?.uid]);
 
   const fetchSettings = useCallback(async () => {
-    if (!currentUser?.uid) {
-      return;
-    }
+    if (!currentUser?.uid) return;
 
     try {
-      const response = await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         headers: withFirebaseUserHeaders(currentUser.uid),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch settings");
+      if (res.ok) {
+        const data = await res.json();
+        setUserSettings(data);
       }
-
-      const data = await response.json();
-      setUserSettings({
-        university: data.university || "Texas State University",
-        major: data.major || "Undeclared",
-      });
-    } catch (error) {
-      console.error("Failed to load settings", error);
+    } catch (e) {
+      console.error("Failed to load settings", e);
     }
   }, [currentUser?.uid]);
 
-  const handleOptimizeSchedule = useCallback(() => {
-    const results = suggestNewSchedule(
-      tasks.map((task) => ({
-        _id: task._id?.toString() || task._id,
-        title: task.title,
-        duration: task.duration || 0,
-        dueDate: task.dueDate,
-        priorityPercentage: calculatePriority(task.priority, task.customPercentage),
-      })),
-      300
-    );
-
-    setScheduleSuggestions(results);
-  }, [calculatePriority, tasks]);
-
   async function handleProfileUpdate(newMajor: string) {
-    if (!currentUser?.uid) {
-      return;
-    }
+    if (!currentUser?.uid) return;
 
     setIsSaving(true);
-    setUserSettings((prev) => ({ ...prev, major: newMajor }));
-
+    setUserSettings({ ...userSettings, major: newMajor });
+    
     try {
       await fetch("/api/settings", {
         method: "PATCH",
         headers: withFirebaseUserHeaders(currentUser.uid, {
           "Content-Type": "application/json",
         }),
-        body: JSON.stringify({ major: newMajor }),
+        body: JSON.stringify({ major: newMajor })
       });
-    } catch (error) {
-      console.error("Failed to save major", error);
+    } catch (e) { 
+      console.error(e); 
     } finally {
       setIsSaving(false);
     }
   }
 
-  async function handleAcceptSuggestion(taskId: string, newDate: string) {
-    if (!currentUser?.uid) {
-      return;
-    }
+  const handleCompleteTask = async (taskId: string) => {
+    if (!currentUser?.uid) return;
 
     try {
       const response = await fetch(`/api/assignments/${taskId}`, {
@@ -152,34 +114,126 @@ export default function Home() {
         headers: withFirebaseUserHeaders(currentUser.uid, {
           "Content-Type": "application/json",
         }),
-        body: JSON.stringify({ dueDate: newDate }),
+        body: JSON.stringify({ completed: true }), 
+      });
+
+      if (response.ok) {
+        await fetchAssignments(); 
+      }
+    } catch (error) {
+      console.error("Failed to mark task as completed:", error);
+    }
+  };
+
+  const handleUndoTask = async (taskId: string) => {
+    if (!currentUser?.uid) return;
+
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: withFirebaseUserHeaders(currentUser.uid, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ completed: false }), 
       });
 
       if (response.ok) {
         await fetchAssignments();
-        setScheduleSuggestions((prev) => prev.filter((s) => s._id !== taskId));
+      }
+    } catch (error) {
+      console.error("Failed to undo task:", error);
+    }
+  };
+
+  const handleAcceptSuggestion = async (taskId: string, newDate: string) => {
+    if (!currentUser?.uid) return;
+
+    try {
+      const response = await fetch(`/api/assignments/${taskId}`, {
+        method: "PATCH",
+        headers: withFirebaseUserHeaders(currentUser.uid, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ plannedDate: newDate }), 
+      });
+
+      if (response.ok) {
+        await fetchAssignments(); 
+        setScheduleSuggestions((prev) => prev.filter((s) => s._id !== taskId)); 
       }
     } catch (error) {
       console.error("Failed to accept suggestion:", error);
     }
-  }
+  };
+
+  const calculatePriority = (priorityWord: string, customNumber?: number | null) => {
+    if (customNumber !== null && customNumber !== undefined) return customNumber; 
+    if (priorityWord === "IMMEDIATE") return 100;
+    if (priorityWord === "medium") return 50;
+    if (priorityWord === "low") return 20;
+    return 0; 
+  };
+
+  const activeTasks = useMemo(() => tasks.filter(task => task.completed !== true), [tasks]);
+  const completedTasks = useMemo(() => tasks.filter(task => task.completed === true), [tasks]);
+
+  const handleOptimizeSchedule = useCallback(() => {
+    const minutesSpent = completedTasks.reduce((sum, task) => sum + (task.duration || 0), 0);
+    const remainingDailyLimit = Math.max(360 - minutesSpent, 0);
+    
+    const tasksForMath = activeTasks.map(task => ({ 
+      ...task,
+      dueDate: task.plannedDate ? task.plannedDate : task.dueDate
+    }));
+
+    const results = suggestNewSchedule(tasksForMath, remainingDailyLimit); 
+    setScheduleSuggestions(results); 
+  }, [activeTasks, completedTasks]);
+
+  const filteredTasks = useMemo(() => {
+    let result = [...activeTasks];
+
+    if (filterPriority !== "all") {
+      result = result.filter(task => task.priority === filterPriority);
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortBy === "priority") {
+        return calculatePriority(b.priority, b.customPercentage) - calculatePriority(a.priority, a.customPercentage);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [activeTasks, filterPriority, sortBy]);
+
+
+  // --- USE EFFECTS ---
 
   useEffect(() => {
-    setLoading(true);
     fetchAssignments();
     fetchSettings();
   }, [fetchAssignments, fetchSettings]);
 
   useEffect(() => {
-    if (tasks.length > 0 && scheduleSuggestions.length === 0) {
-      handleOptimizeSchedule();
+    if (tasks.length > 0) { 
+      handleOptimizeSchedule(); 
     }
-  }, [handleOptimizeSchedule, scheduleSuggestions.length, tasks.length]);
+  }, [tasks, handleOptimizeSchedule]);
+
+
+  // --- UI RENDERING ---
 
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <OverloadBanner />
+        <OverloadBanner tasks={activeTasks} /> 
+        
+        <DailyQuote />
+        <WeeklyStats completedTasks={completedTasks.length} /> 
 
         <div className="mt-6">
           <div className="mb-8">
@@ -188,123 +242,163 @@ export default function Home() {
             </h2>
             <ScheduleGrid tasks={tasks} />
           </div>
-        </div>
 
-        <div
-          className={`mt-6 p-4 rounded-xl border transition-all ${
-            userSettings.major === "Undeclared"
-              ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
-              : "bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 flex flex-col md:flex-row justify-between items-center"
-          }`}
-        >
-          <div className="mb-2 md:mb-0">
-            <h2
-              className={`font-bold ${
-                userSettings.major === "Undeclared"
-                  ? "text-blue-800 dark:text-blue-300 text-lg mb-2"
-                  : "text-zinc-700 dark:text-zinc-300"
-              }`}
-            >
-              {userSettings.major === "Undeclared"
-                ? "Personalize Your Academic Search!"
-                : "Academic Profile"}
-            </h2>
-            {userSettings.major === "Undeclared" ? (
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                Select your major to get personalized study links.
-              </p>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-3">
-            <select
-              value={userSettings.major}
-              onChange={(e) => handleProfileUpdate(e.target.value)}
-              disabled={isSaving}
-              className="p-2 border rounded-lg bg-white dark:bg-zinc-900 dark:border-zinc-600 dark:text-white text-sm cursor-pointer shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Undeclared">Select Major...</option>
-              <option value="Computer Science">Computer Science</option>
-              <option value="Nursing">Nursing</option>
-              <option value="Business">Business</option>
-              <option value="Psychology">Psychology</option>
-              <option value="Biology">Biology</option>
-              <option value="Engineering">Engineering</option>
-              <option value="English">English</option>
-              <option value="Criminal Justice">Criminal Justice</option>
-              <option value="Mass Communication">Mass Communication</option>
-              <option value="Kinesiology">Kinesiology</option>
-              <option value="Political Science">Political Science</option>
-              <option value="History">History</option>
-            </select>
-            {isSaving ? (
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 animate-pulse font-medium">
-                Saving...
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-              Current Tasks
-            </h2>
-
-            <div
-              className={`px-4 py-1 text-sm rounded-full border font-semibold ${
-                isOverloaded
-                  ? "bg-red-50 border-red-200 text-red-700"
-                  : "bg-green-50 border-green-200 text-green-700"
-              }`}
-            >
-              {isOverloaded ? "Overloaded" : "On Track"}
+          <div className={`mt-6 p-4 rounded-xl border transition-all ${userSettings.major === "Undeclared" ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800" : "bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 flex flex-col md:flex-row justify-between items-center"}`}>
+            <div className="mb-2 md:mb-0">
+              <h2 className={`font-bold ${userSettings.major === "Undeclared" ? "text-blue-800 dark:text-blue-300 text-lg mb-2" : "text-zinc-700 dark:text-zinc-300"}`}>
+                {userSettings.major === "Undeclared" ? "Personalize Your Academic Search!" : "Academic Profile"}
+              </h2>
+              {userSettings.major === "Undeclared" && (
+                <p className="text-sm text-blue-600 dark:text-blue-400">Select your major to get personalized study links.</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <select 
+                value={userSettings.major} 
+                onChange={(e) => handleProfileUpdate(e.target.value)}
+                disabled={isSaving}
+                className="p-2 border rounded-lg bg-white dark:bg-zinc-900 dark:border-zinc-600 dark:text-white text-sm cursor-pointer shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Undeclared">Select Major...</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Nursing">Nursing</option>
+                <option value="Business">Business</option>
+                <option value="Psychology">Psychology</option>
+                <option value="Biology">Biology</option>
+                <option value="Engineering">Engineering</option>
+                <option value="English">English</option>
+                <option value="Criminal Justice">Criminal Justice</option>
+                <option value="Mass Communication">Mass Communication</option>
+                <option value="Kinesiology">Kinesiology</option>
+                <option value="Political Science">Political Science</option>
+                <option value="History">History</option>
+              </select>
+              {isSaving && <span className="text-xs text-zinc-500 dark:text-zinc-400 animate-pulse font-medium">Saving...</span>}
             </div>
           </div>
+        
+          <div className="mt-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                Current Tasks
+              </h2>
+              <div className="flex flex-wrap items-center gap-3">
+                  <select 
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="IMMEDIATE">Immediate</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
 
-          <div className="flex flex-col gap-4">
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <p className="text-zinc-500 animate-pulse text-lg">
-                  Loading your schedule please wait...
-                </p>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="p-2 text-sm rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="date">Sort by Due Date</option>
+                    <option value="priority">Sort by Priority</option>
+                  </select>
+
+                <div className={`px-4 py-1 text-sm rounded-full border font-semibold ${isOverloaded ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+                  {isOverloaded ? "Overloaded" : "On Track"}
+                </div>
               </div>
-            ) : tasks.length > 0 ? (
-              tasks.map((task) => {
-                const suggestion = scheduleSuggestions.find(
-                  (s) => s._id === (task._id?.toString() || task._id)
-                );
+            </div>
 
-                return (
-                  <AssignmentCard
-                    key={task._id}
-                    id={task._id?.toString() || task._id}
-                    title={task.title}
-                    dueDate={task.dueDate}
-                    duration={task.duration || 0}
-                    priorityPercentage={calculatePriority(
-                      task.priority,
-                      task.customPercentage
-                    )}
-                    priorityWord={task.priority}
-                    customPercentage={task.customPercentage}
-                    onUpdate={fetchAssignments}
-                    suggestedDate={suggestion?.suggestedDate}
-                    onAcceptSuggestion={handleAcceptSuggestion}
-                    isDelayed={suggestion?.isDelayed}
-                    isCritical={suggestion?.isCritical}
-                    courseCode={task.courseCode || ""}
-                    keywords={task.keywords || []}
-                    isActionable={task.isActionable !== false}
-                    userMajor={userSettings.major}
-                    userUniversity={userSettings.university}
-                  />
-                );
-              })
-            ) : (
-              <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-                <p className="text-zinc-500">
-                  You are all caught up! Enjoy your day.
-                </p>
+            <div className="flex flex-col gap-4">
+              {loading ? (
+                <div className="flex justify-center items-center py-20">
+                  <p className="text-zinc-500 animate-pulse text-lg">
+                    Loading your schedule please wait...
+                  </p>
+                </div>
+              ) : filteredTasks.length > 0 ? (
+                filteredTasks.map((task) => {
+                    const taskId = task._id?.toString() || task._id;
+                    const suggestion = scheduleSuggestions.find((s) => s._id === taskId);
+                    
+                    const targetDateStr = (task.plannedDate || task.dueDate).split('T')[0];
+                    const dailyMinutesUsed = activeTasks
+                      .filter(t => (t.plannedDate || t.dueDate).split('T')[0] === targetDateStr)
+                      .reduce((sum, t) => sum + (Number(t.duration) || 60), 0);
+
+                    return (
+                      <AssignmentCard
+                        key={taskId}
+                        id={taskId}
+                        title={task.title}
+                        dueDate={task.dueDate}
+                        duration={task.duration || 0}
+                        priorityPercentage={calculatePriority(task.priority, task.customPercentage)}
+                        priorityWord={task.priority}
+                        customPercentage={task.customPercentage}
+                        onUpdate={fetchAssignments}
+                        suggestedDate={suggestion?.suggestedDate}
+                        onAcceptSuggestion={handleAcceptSuggestion}
+                        isDelayed={suggestion?.isDelayed}
+                        isCritical={suggestion?.isCritical}
+                        courseCode={task.courseCode || ""}
+                        keywords={task.keywords || []}
+                        isActionable={task.isActionable !== false}
+                        userMajor={userSettings.major}
+                        userUniversity={userSettings.university}
+                        onComplete={() => handleCompleteTask(taskId)}
+                        plannedDate={task.plannedDate}
+                        dailyMinutesUsed={dailyMinutesUsed}
+                        maxDailyMinutes={360}
+                      />
+                    );
+                  })
+              ) : (
+                <div className="text-center py-20 bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
+                  <p className="text-zinc-500">
+                  {tasks.length === 0
+                    ? "You are all caught up! Enjoy your day."
+                    : "No tasks match your current filters."}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {completedTasks.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-white font-bold transition-colors outline-none"
+                >
+                  {showCompleted ? "▼ Hide" : "▶ Show"} Completed Assignments ({completedTasks.length})
+                </button>
+
+                {showCompleted && (
+                  <div className="mt-4 flex flex-col gap-3 opacity-60"> 
+                    {completedTasks.map((task) => (
+                      <div 
+                        key={task._id} 
+                        className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg flex justify-between items-center border border-zinc-200 dark:border-zinc-800"
+                      >
+                        <div>
+                          <span className="line-through text-zinc-500 font-medium">{task.title}</span>
+                          <span className="ml-3 text-xs text-zinc-400">{task.duration} mins</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => handleUndoTask(task._id?.toString() || task.id.toString())}
+                            className="text-xs text-zinc-400 hover:text-blue-500 font-bold transition-colors"
+                          >
+                            ↩ Undo
+                          </button>
+                        <span className="text-xs text-green-600 dark:text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                          ✓ Done
+                        </span>
+                      </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -324,6 +324,39 @@ Next Steps:
 - Jira Task: Kyle - priority calculation on refresh for each assignment  
   - SCRUM-84, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-84-priority-calculation-on-refresh-for-each-assignment)
 
+**Marco:** "Designed and implemented core logic and interactive UI by building the rescheduling engine, developing the dynamic assignment cards with inline editing and "Smart Study" resource generation and implementing comprehensive dashboard filtering"
+
+- Jira Task: Marco - Automated Rescheduling engine/logic
+  - SCRUM-92, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-92-automated-rescheduling-engine-l)
+
+- Jira Task: Marco - Implement the "accepted" button feature for UI Interaction
+  - SCRUM-93, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-93-implement-the-accepted-button-f)
+
+- Jira Task: Marco - Build and generate search queries for educational help. REAL PULL REQUEST
+  - SCRUM-95, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-95-build-and-generate-search-queri)
+
+- Jira Task: Marco - Add a "Helpful Resources" popover to the dashboard
+  - SCRUM-96, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-96-add-a-helpful-resources-popover)
+
+- Jira Task: Marco - Implement "Edit Mode" State in the Component
+  - SCRUM-97, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-97-implement-edit-mode-state-in-th)
+
+- Jira Task: Marco - Develop the "Auto-Save" Debounce Logic to send to mongodb
+  - SCRUM-99, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-99-develop-the-auto-save-debounce-)
+
+- Jira Task: Marco - Assignments priority conversion to percentage
+  - SCRUM-105, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-105-assignments-priority-conversio)
+
+- Jira Task: Marco - Plan unit tests for Workload Calculation, Priority Logic, and Rescheduler Engine
+  - SCRUM-111, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-111-plan-unit-tests-for-workload-c)
+
+- Jira Task: Marco - Run unit tests for Workload Calculation, Priority Logic, and Rescheduler Engine
+  - SCRUM-112, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-112-run-unit-tests-for-workload-ca)
+
+- Jira Task: Marco - Filtering Option for page and other updates for the user.
+  - SCRUM-114, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-114-filtering-option-for-page-and-)
+
+
   ## Reports
 
 ![Burnup](./image/Sprint-3-Burnup.png)
