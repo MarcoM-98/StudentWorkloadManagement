@@ -284,3 +284,79 @@ Next Steps:
 - Study room/practice if user has time to spare.
 - Dashboard sorting & filtering logic (ex. looking at completed tasks or Closest due date, higher priority etc)
 
+## Features
+
+## Sprint 3
+
+## Contributions
+
+
+
+**Kyle:** "designed and implemented the document upload and AI analysis pipeline, including backend file storage, a frontend upload interface with progress feedback, integration with the OpenAI API for extracting workload estimates, and a review/edit interface for confirming assignment details before saving. Also added validation and testing for upload handling and AI responses."
+
+- Jira Task: Kyle - add UI controls for editing and deleting saved assignments
+  - SCRUM-72, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-72-add-UI-controls-for-editing-and-deleting-saved-assignments)
+
+- Jira Task: Kyle - improve upload UX with loading and progress feedback  
+  - SCRUM-76, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-76-improve-upload-UX-with-loading-and-progress-feedback)
+
+- Jira Task: Kyle - handle unsupported or malformed file analysis gracefully in UI  
+  - SCRUM-77, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-77-handle-unsupported-or-malformed-file-analysis-gracefully-in-UI)
+
+- Jira Task: Kyle - Persist assignments to database and replace local storage  
+  - SCRUM-78, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-78-Persist-assignments-to-database-and-replace-local-storage)
+
+- Jira Task: Kyle - add PDF support and safer file parsing for analyze route  
+  - SCRUM-79, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-79-add-PDF-support-and-safer-file-parsing-for-analyze-route)
+
+- Jira Task: Kyle - implement workload visualization components (charts/timeline)  
+  - SCRUM-80, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-80-implement-workload-visualization-components-charts/timeline)
+
+- Jira Task: Kyle - highlight overloaded days visually in workload chart  
+  - SCRUM-81, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-81-highlight-overloaded-days-visually-in-workload-chart)
+
+- Jira Task: Kyle - Refactor schedule grid into reusable components/hooks  
+  - SCRUM-82, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-82-Refactor-schedule-grid-into-reusable-components/hooks)
+
+- Jira Task: Kyle - compute and display weekly workload distribution from saved assignments  
+  - SCRUM-83, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-83-compute-and-display-weekly-workload-distribution-from-saved-assignments)
+
+- Jira Task: Kyle - priority calculation on refresh for each assignment  
+  - SCRUM-84, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-84-priority-calculation-on-refresh-for-each-assignment)
+
+**Marco:** "Designed and implemented core logic and interactive UI by building the rescheduling engine, developing the dynamic assignment cards with inline editing and "Smart Study" resource generation and implementing comprehensive dashboard filtering"
+
+- Jira Task: Marco - Automated Rescheduling engine/logic
+  - SCRUM-92, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-92-automated-rescheduling-engine-l)
+
+- Jira Task: Marco - Implement the "accepted" button feature for UI Interaction
+  - SCRUM-93, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-93-implement-the-accepted-button-f)
+
+- Jira Task: Marco - Build and generate search queries for educational help. REAL PULL REQUEST
+  - SCRUM-95, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-95-build-and-generate-search-queri)
+
+- Jira Task: Marco - Add a "Helpful Resources" popover to the dashboard
+  - SCRUM-96, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-96-add-a-helpful-resources-popover)
+
+- Jira Task: Marco - Implement "Edit Mode" State in the Component
+  - SCRUM-97, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-97-implement-edit-mode-state-in-th)
+
+- Jira Task: Marco - Develop the "Auto-Save" Debounce Logic to send to mongodb
+  - SCRUM-99, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-99-develop-the-auto-save-debounce-)
+
+- Jira Task: Marco - Assignments priority conversion to percentage
+  - SCRUM-105, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-105-assignments-priority-conversio)
+
+- Jira Task: Marco - Plan unit tests for Workload Calculation, Priority Logic, and Rescheduler Engine
+  - SCRUM-111, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-111-plan-unit-tests-for-workload-c)
+
+- Jira Task: Marco - Run unit tests for Workload Calculation, Priority Logic, and Rescheduler Engine
+  - SCRUM-112, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-112-run-unit-tests-for-workload-ca)
+
+- Jira Task: Marco - Filtering Option for page and other updates for the user.
+  - SCRUM-114, [Bitbucket](https://bitbucket.org/cs3398-enceladus-s26/enchiladas/branch/SCRUM-114-filtering-option-for-page-and-)
+
+
+  ## Reports
+
+![Burnup](./image/Sprint-3-Burnup.png)

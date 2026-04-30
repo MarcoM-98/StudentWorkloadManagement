@@ -1,91 +1,72 @@
 "use client";
+import React from "react";
 
-import { useEffect, useState } from "react";
-
-type SavedAssignment = {
-  _id: string;
-  title: string;
-  duration: number;
-  dueDate: string;
+type Task = {
+    duration?: number | string;
+    dueDate?: string;
+    plannedDate?: string;
 };
 
-type OverloadResult = {
-  requiredHours: number;
-  availableHours: number;
-  overloadHours: number;
-  isOverloaded: boolean;
-  windowStart: string;
-  windowEnd: string;
-};
+export default function OverloadBanner({ tasks }: { tasks: Task[] }) {
+    if (!tasks || tasks.length === 0) return null;
 
-export default function OverloadBanner() {
-  const [data, setData] = useState<OverloadResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const maxDailyMinutes = 360; // 6 hours per day limit
 
-  useEffect(() => {
-    async function loadOverloadData() {
-      try {
-        const response = await fetch("/api/assignments");
+    //  Group all tasks into specific Daily Buckets
+    const dailyBuckets: Record<string, number> = {};
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch assignments");
+    tasks.forEach(task => {
+        // Find what day this is scheduled for
+        const dateStr = (task.plannedDate || task.dueDate || "").split('T')[0];
+        
+        if (dateStr) {
+            const duration = Number(task.duration) || 60; // Default to 60 mins if missing
+            
+            // If the bucket doesn't exist yet, create it
+            if (!dailyBuckets[dateStr]) {
+                dailyBuckets[dateStr] = 0;
+            }
+            // Add the task's time to that specific day
+            dailyBuckets[dateStr] += duration;
         }
+    });
 
-        const parsed: SavedAssignment[] = await response.json();
+    // Check each day to see if it overflows the 6-hour limit
+    let totalOverloadMinutes = 0;
+    let overloadedDaysCount = 0;
 
-        const requiredMinutes = parsed.reduce(
-          (total, assignment) => total + Number(assignment.duration || 0),
-          0
-        );
+    Object.entries(dailyBuckets).forEach(([date, minutes]) => {
+        if (minutes > maxDailyMinutes) {
+            totalOverloadMinutes += (minutes - maxDailyMinutes);
+            overloadedDaysCount += 1;
+        }
+    });
 
-        const availableHours = 5;
-        const requiredHours = requiredMinutes / 60;
-        const overloadHours = Math.max(0, requiredHours - availableHours);
+    const isOverloaded = totalOverloadMinutes > 0;
 
-        const dueDates = parsed
-          .map((assignment) => assignment.dueDate)
-          .filter(Boolean)
-          .sort();
+    // If no individual day is over 6 hours, hide the banner
+    if (!isOverloaded) return null;
 
-        const windowStart = dueDates.length > 0 ? dueDates[0] : "unknown";
-        const windowEnd =
-          dueDates.length > 0 ? dueDates[dueDates.length - 1] : "unknown";
+    const overloadedHours = (totalOverloadMinutes / 60).toFixed(1);
 
-        setData({
-          requiredHours,
-          availableHours,
-          overloadHours,
-          isOverloaded: requiredHours > availableHours,
-          windowStart,
-          windowEnd,
-        });
-      } catch (err) {
-        setError("Could not load workload status");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadOverloadData();
-  }, []);
-
-  if (loading) return null;
-  if (error) return null;
-  if (!data || !data.isOverloaded) return null;
-
-  return (
-    <div className="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded mb-4">
-      <strong className="font-semibold">Workload Overload Detected</strong>
-      <p className="text-sm mt-1">
-        You are overloaded by <b>{data.overloadHours.toFixed(1)} hours</b>
-      </p>
-      <p className="text-xs mt-1">
-        Required: {data.requiredHours.toFixed(1)}h · Available: {data.availableHours}h
-      </p>
-      <p className="text-xs text-gray-600">
-        Window: {data.windowStart} → {data.windowEnd}
-      </p>
-    </div>
-  );
+    return (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6 text-red-800 dark:text-red-300">
+            <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">⚠️</span>
+                <h3 className="font-bold text-lg">Daily Overload Detected</h3>
+            </div>
+            <p className="font-semibold mb-1">
+                You have {overloadedDaysCount} day{overloadedDaysCount > 1 ? 's' : ''} pushed past your 6-hour limit.
+            </p>
+            <div className="text-sm opacity-90">
+                <p>
+                    You have <span className="font-bold">{overloadedHours} excess hours</span> that need to be rescheduled.
+                </p>
+                <p className="mt-2 text-xs italic opacity-75">
+                    Tip: Look for the red "Late Warning" or "Optimization Suggestion" boxes on your assignment cards below to shift tasks to lighter days!
+                </p>
+            </div>
+        </div>
+    );
 }
+
