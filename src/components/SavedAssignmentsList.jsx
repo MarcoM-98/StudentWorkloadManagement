@@ -165,13 +165,23 @@ export default function SavedAssignmentsList({
               key={assignment.id}
               className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
             >
-              <p className="text-white font-semibold">{assignment.title}</p>
-              <p className="text-zinc-300">
-                Estimated Minutes: {assignment.minutes}
-              </p>
-              <p className="mb-4 text-zinc-300">
-                Due Date: {formatDisplayDate(assignment.dueDate)}
-              </p>
+             <p className="text-white font-semibold">{assignment.title}</p>
+
+<p className="text-sm text-blue-400">
+  {assignment.courseName}
+</p>
+
+<p className="text-zinc-300">
+  Estimated Minutes: {assignment.minutes}
+</p>
+
+<p className="text-zinc-300">
+  Due Date: {formatDisplayDate(assignment.dueDate)}
+</p>
+
+<p className="mb-4 text-zinc-400 text-sm">
+  {assignment.descriptionText}
+</p>
 
               <div className="flex gap-3">
                 <button
